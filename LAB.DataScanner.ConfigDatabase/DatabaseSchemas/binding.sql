@@ -1,0 +1,1 @@
+﻿CREATE SCHEMA [binding] AUTHORIZATION db_owner
