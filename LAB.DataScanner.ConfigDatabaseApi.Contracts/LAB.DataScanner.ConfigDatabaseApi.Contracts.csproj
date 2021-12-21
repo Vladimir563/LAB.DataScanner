@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\LAB.DataScanner.ConfigDatabaseApi.DataAccess\LAB.DataScanner.ConfigDatabaseApi.DataAccess.csproj" />
+    <PackageReference Include="Microsoft.AspNetCore.OData" Version="7.5.2" />
   </ItemGroup>
 
 </Project>

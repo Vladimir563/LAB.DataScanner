@@ -1,7 +1,11 @@
-﻿using LAB.DataScanner.ConfigDatabaseApi.DataAccess.EF;
+﻿using FluentValidation;
+using LAB.DataScanner.ConfigDatabaseApi.Contracts.Services;
+using LAB.DataScanner.ConfigDatabaseApi.DataAccess.EF;
 using LAB.DataScanner.ConfigDatabaseApi.DataAccess.Entities;
 using Microsoft.AspNet.OData;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 
 namespace LAB.DataScanner.ConfigDatabaseApi.Controllers
@@ -11,18 +15,19 @@ namespace LAB.DataScanner.ConfigDatabaseApi.Controllers
     [ApiExplorerSettings(IgnoreApi = false)]
     public class ApplicationTypesController : BaseController<ApplicationType>
     {
-        private readonly DataScannerDbContext _context;
+        private readonly IBaseService<ApplicationType> _appTypeService;
 
-        public ApplicationTypesController(DataScannerDbContext context)
+        private readonly IValidator<ApplicationType> _validator;
+
+        public ApplicationTypesController(IBaseService<ApplicationType> appTypeService,
+            IValidator<ApplicationType> validator)
         {
-            _context = context;
+            _appTypeService = appTypeService;
+            _validator = validator;
         }
 
-        public override SingleResult<ApplicationType> Get([FromODataUri] string key) 
-        {
-            return SingleResult.Create(_context.ApplicationTypes.Where(s => s.TypeId.Equals(key)));
-        }
-
+        public override SingleResult<ApplicationType> Get([FromODataUri] string key) =>
+            _appTypeService.GetEntity(key);
     }
 }
 

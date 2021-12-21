@@ -15,6 +15,8 @@ using System.Configuration;
 using Microsoft.AspNet.OData.Extensions;
 using Microsoft.AspNet.OData.Builder;
 using OData.Swagger.Services;
+using LAB.DataScanner.ConfigDatabaseApi.BusinessLogic.Registrators;
+using LAB.DataScanner.ConfigDatabaseApi.Validation;
 
 namespace LAB.DataScanner.ConfigDatabaseApi
 {
@@ -53,7 +55,10 @@ namespace LAB.DataScanner.ConfigDatabaseApi
 
             services.AddMvc(p => p.EnableEndpointRouting = false);
 
-            services.AddConfigDbContext();
+            services.AddConfigDbContext()
+                    .AddDataAccess()
+                    .AddBusinessLogic()
+                    .AddValidation();
 
             services.
                 AddDbContext<DataScannerDbContext>(options => options
@@ -72,6 +77,8 @@ namespace LAB.DataScanner.ConfigDatabaseApi
             {
                 b.MapODataServiceRoute("ODataRoute", "odata", GetEdmModel());
             });
+
+            app.UseExceptionHandlerMiddleware();
 
             app.UseRouting();
 

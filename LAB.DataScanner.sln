@@ -9,7 +9,9 @@ Project("{00D1A9C2-B5F0-4AF3-8072-F6C62B433612}") = "LAB.DataScanner.ConfigDatab
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LAB.DataScanner.ConfigDatabaseApi", "LAB.DataScanner.ConfigDatabaseApi\LAB.DataScanner.ConfigDatabaseApi.csproj", "{85B65432-1A33-4AC6-B536-BC6CDB05DB0E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LAB.DataScanner.ConfigDatabaseApi.BusinessLogic", "LAB.DataScanner.ConfigDatabaseApi.BusinessLogic\LAB.DataScanner.ConfigDatabaseApi.BusinessLogic.csproj", "{328B8B6A-A340-4F69-AFAD-61EF3682BFF7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LAB.DataScanner.ConfigDatabaseApi.BusinessLogic", "LAB.DataScanner.ConfigDatabaseApi.BusinessLogic\LAB.DataScanner.ConfigDatabaseApi.BusinessLogic.csproj", "{328B8B6A-A340-4F69-AFAD-61EF3682BFF7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LAB.DataScanner.ConfigDatabaseApi.Contracts", "LAB.DataScanner.ConfigDatabaseApi.Contracts\LAB.DataScanner.ConfigDatabaseApi.Contracts.csproj", "{C064A5CF-B56B-4645-B8B6-D98F9BF9493A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -35,6 +37,10 @@ Global
 		{328B8B6A-A340-4F69-AFAD-61EF3682BFF7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{328B8B6A-A340-4F69-AFAD-61EF3682BFF7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{328B8B6A-A340-4F69-AFAD-61EF3682BFF7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C064A5CF-B56B-4645-B8B6-D98F9BF9493A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C064A5CF-B56B-4645-B8B6-D98F9BF9493A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C064A5CF-B56B-4645-B8B6-D98F9BF9493A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C064A5CF-B56B-4645-B8B6-D98F9BF9493A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

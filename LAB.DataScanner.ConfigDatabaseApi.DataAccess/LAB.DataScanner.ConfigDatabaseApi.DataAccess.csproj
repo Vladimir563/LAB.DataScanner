@@ -12,4 +12,8 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\LAB.DataScanner.ConfigDatabaseApi.Contracts\LAB.DataScanner.ConfigDatabaseApi.Contracts.csproj" />
+  </ItemGroup>
+
 </Project>
