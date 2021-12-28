@@ -1,0 +1,19 @@
+﻿{
+  "Application": {
+
+  },
+  "Binding": {
+    "ReceiverQueue": "WebPageDownloader/Gold",
+    "SenderExchange": "UrlsGenerator/Gold",
+
+    "SenderRoutingKeys": "['#']"
+  },
+  "ConnectionSettings": {
+
+    "UserName": "guest",
+    "Password": "guest",
+    "HostName": "localhost",
+    "Port": "5672",
+    "VirtualHost": "/"
+  }
+}
