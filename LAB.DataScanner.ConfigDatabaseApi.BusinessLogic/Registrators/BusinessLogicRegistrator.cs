@@ -8,9 +8,8 @@ namespace LAB.DataScanner.ConfigDatabaseApi.BusinessLogic.Registrators
     public static class BusinessLogicRegistrator
     {
         public static IServiceCollection AddBusinessLogic(this IServiceCollection services) => services
-        .AddTransient<IBaseService<ApplicationType>, ApplicationTypeService>();
-
-        //.AddTransient<IBaseService<ApplicationInstance>, ApplicationInstancesRepository>()
-        //.AddTransient<IBaseService<Binding>, BindingsRepository>();
+        .AddTransient<IBaseService<ApplicationType>, ApplicationTypeService>()
+        .AddTransient<IBaseService<ApplicationInstance>, ApplicationInstanceService>()
+        .AddTransient<IBaseService<Binding>, BindingService>();
     }
 }

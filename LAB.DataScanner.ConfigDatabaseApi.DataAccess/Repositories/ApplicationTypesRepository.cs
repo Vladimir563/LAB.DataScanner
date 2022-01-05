@@ -2,7 +2,6 @@
 using LAB.DataScanner.ConfigDatabaseApi.DataAccess.EF;
 using LAB.DataScanner.ConfigDatabaseApi.DataAccess.Entities;
 using Microsoft.AspNet.OData;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -16,27 +15,41 @@ namespace LAB.DataScanner.ConfigDatabaseApi.DataAccess.Repositories
             _db = dbContext;
         }
 
-        public void Create(ApplicationType entity)
+        public void Create(ApplicationType entity) 
         {
-            throw new NotImplementedException();
-        }
+            _db.ApplicationTypes.Add(entity);
 
-        public bool Delete(int id)
-        {
-            throw new NotImplementedException();
+            _db.SaveChanges();
         }
+            
+
+        public bool Delete(int id) 
+        {
+            var entity = _db.ApplicationTypes.Find(id);
+
+            _db.ApplicationTypes.Remove(entity);
+
+            _db.SaveChanges();
+
+            return true;
+        }
+            
 
         public SingleResult<ApplicationType> Get(string key) =>
             SingleResult.Create(_db.ApplicationTypes.Where(s => s.TypeId.Equals(int.Parse(key))));
 
-        public IEnumerable<ApplicationType> GetAll()
-        {
-            throw new NotImplementedException();
-        }
+        public IEnumerable<ApplicationType> GetAll() =>
+            _db.ApplicationTypes;
 
         public ApplicationType Update(int id, ApplicationType newEntity)
         {
-            throw new NotImplementedException();
+            var entity = _db.ApplicationTypes.Find(id);
+
+            entity = newEntity;
+
+            _db.SaveChanges();
+
+            return entity;
         }
     }
 }

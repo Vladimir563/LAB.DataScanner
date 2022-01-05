@@ -2,7 +2,6 @@
 using LAB.DataScanner.ConfigDatabaseApi.Contracts.Services;
 using LAB.DataScanner.ConfigDatabaseApi.DataAccess.Entities;
 using Microsoft.AspNet.OData;
-using System;
 using System.Collections.Generic;
 
 namespace LAB.DataScanner.ConfigDatabaseApi.BusinessLogic.Services
@@ -16,27 +15,28 @@ namespace LAB.DataScanner.ConfigDatabaseApi.BusinessLogic.Services
             _appTypeResitory = appTypeResitory;
         }
 
-        public void CreateEntity(ApplicationType entity)
+        public void CreateEntity(ApplicationType entity) => 
+            _appTypeResitory.Create(entity);
+
+        public bool DeleteEntity(int id) 
         {
-            throw new NotImplementedException();
+            var appType = _appTypeResitory.Get(id.ToString());
+
+            if (appType is null) 
+            {
+                return false;
+            }
+
+            return true;
         }
 
-        public bool DeleteEntity(int id)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IEnumerable<ApplicationType> GetAllEntities()
-        {
-            throw new NotImplementedException();
-        }
+        public IEnumerable<ApplicationType> GetAllEntities() => 
+            _appTypeResitory.GetAll();
 
         public SingleResult<ApplicationType> GetEntity(string key) =>
             _appTypeResitory.Get(key);
 
-        public ApplicationType UpdateEntity(int id, ApplicationType newEntity)
-        {
-            throw new NotImplementedException();
-        }
+        public ApplicationType UpdateEntity(int id, ApplicationType newEntity) => 
+            _appTypeResitory.Update(id, newEntity);
     }
 }

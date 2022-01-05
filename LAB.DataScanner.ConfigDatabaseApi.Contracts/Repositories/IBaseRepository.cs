@@ -14,6 +14,5 @@ namespace LAB.DataScanner.ConfigDatabaseApi.Contracts.Repositories
         T Update(int id, T newEntity);
 
         bool Delete(int id);
-
     }
 }

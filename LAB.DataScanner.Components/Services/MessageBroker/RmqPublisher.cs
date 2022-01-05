@@ -26,6 +26,10 @@ namespace LAB.DataScanner.Components.Services.MessageBroker
             _amqpChannel.Dispose();
         }
 
+        public void SetExchange(string exchange) => _exchange = exchange;
+
+        public void SetRoutingKey(string routingKey) => _routingKey = routingKey;
+
         public void Publish(byte[] message)
         {
             _amqpChannel.BasicPublish(_exchange,

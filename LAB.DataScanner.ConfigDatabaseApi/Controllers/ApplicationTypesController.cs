@@ -4,7 +4,6 @@ using LAB.DataScanner.ConfigDatabaseApi.DataAccess.EF;
 using LAB.DataScanner.ConfigDatabaseApi.DataAccess.Entities;
 using Microsoft.AspNet.OData;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 
