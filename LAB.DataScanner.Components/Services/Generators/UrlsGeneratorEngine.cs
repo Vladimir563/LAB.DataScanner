@@ -1,4 +1,4 @@
-﻿using LAB.DataScanner.ConfigDatabaseApi.Contracts.MessageBroker;
+﻿using LAB.DataScanner.Components.Services.MessageBroker.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using System.Collections.Generic;
@@ -10,11 +10,11 @@ namespace LAB.DataScanner.Components.Services.Generators
 {
     public class UrlsGeneratorEngine
     {
-        IRmqPublisher _rmqPublisher;
+        private readonly IRmqPublisher _rmqPublisher;
 
-        IConfigurationSection _applicationSection;
+        private readonly IConfigurationSection _applicationSection;
 
-        IConfigurationSection _bindingSection;
+        private readonly IConfigurationSection _bindingSection;
 
         public UrlsGeneratorEngine(IRmqPublisher rmqPublisher, IConfigurationSection applicationSection, 
             IConfigurationSection bindingSection)
@@ -50,11 +50,11 @@ namespace LAB.DataScanner.Components.Services.Generators
 
             var urlSequences = rangeOptions.Select(s => s.ToArray()).Select(a =>
             {
-                var r = new int[a[a.Length - 1] - a[0] + 1];
+                var r = new int[a[^1] - a[0] + 1];
 
                 var counter = 0;
 
-                for (int i = a[0]; i <= a[a.Length - 1]; i++)
+                for (int i = a[0]; i <= a[^1]; i++)
                 {
                     r[counter++] = i;
                 }

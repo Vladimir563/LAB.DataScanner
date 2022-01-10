@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace LAB.DataScanner.ConfigDatabaseApi.Contracts.MessageBroker
+namespace LAB.DataScanner.Components.Services.MessageBroker.Interfaces
 {
     public interface IRmqPublisher : IDisposable
     {

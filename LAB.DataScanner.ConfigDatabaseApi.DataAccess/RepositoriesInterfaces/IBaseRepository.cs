@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNet.OData;
 using System.Collections.Generic;
 
-namespace LAB.DataScanner.ConfigDatabaseApi.Contracts.Repositories
+namespace LAB.DataScanner.ConfigDatabaseApi.DataAccess.RepositoriesInterfaces
 {
     public interface IBaseRepository <T> where T : class
     {

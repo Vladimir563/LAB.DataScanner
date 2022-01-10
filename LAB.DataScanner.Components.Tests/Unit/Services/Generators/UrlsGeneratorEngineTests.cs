@@ -1,5 +1,5 @@
 ﻿using LAB.DataScanner.Components.Services.Generators;
-using LAB.DataScanner.ConfigDatabaseApi.Contracts.MessageBroker;
+using LAB.DataScanner.Components.Services.MessageBroker.Interfaces;
 using Microsoft.Extensions.Configuration;
 using NSubstitute;
 using NUnit.Framework;
@@ -8,7 +8,7 @@ using System.Text;
 
 namespace LAB.DataScanner.Components.Tests.Unit.Services.Generators
 {
-    public class UrlsGeneratorEngineTest
+    public class UrlsGeneratorEngineTests
     {
         IRmqPublisher rmqPublisherServiceMock;
 

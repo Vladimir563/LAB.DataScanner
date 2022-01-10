@@ -6,15 +6,13 @@ namespace LAB.DataScanner.RabbitMQ.TestPublisher
 {
     internal class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             RmqPublisherBuilder publisherBuilder = new RmqPublisherBuilder();
 
             var publisher = publisherBuilder.UsingExchangeAndRoutingKey("UrlsGenerator/Gold", "#")
                 .UsingDefaultConnectionSetting()
                 .Build();
-
-            byte[] body = new byte[] { };
 
             while (true) 
             {
@@ -24,7 +22,7 @@ namespace LAB.DataScanner.RabbitMQ.TestPublisher
 
                 if (mes.Equals("q")) break;
 
-                body = Encoding.UTF8.GetBytes(mes);
+                byte[] body = Encoding.UTF8.GetBytes(mes);
 
                 publisher.Publish(body);
             }

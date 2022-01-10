@@ -1,8 +1,7 @@
-﻿using LAB.DataScanner.ConfigDatabaseApi.Contracts.Repositories;
-using LAB.DataScanner.ConfigDatabaseApi.DataAccess.EF;
+﻿using LAB.DataScanner.ConfigDatabaseApi.DataAccess.EF;
 using LAB.DataScanner.ConfigDatabaseApi.DataAccess.Entities;
+using LAB.DataScanner.ConfigDatabaseApi.DataAccess.RepositoriesInterfaces;
 using Microsoft.AspNet.OData;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 

@@ -1,11 +1,11 @@
 ﻿using LAB.DataScanner.Components.Services.MessageBroker;
-using LAB.DataScanner.ConfigDatabaseApi.Contracts.MessageBroker;
+using LAB.DataScanner.Components.Services.MessageBroker.Interfaces;
 using NSubstitute;
 using NUnit.Framework;
 
 namespace LAB.DataScanner.Components.Tests.Unit.Services.MessageBroker
 {
-    public class RmqPublisherTest
+    public class RmqPublisherTests
     {
         IRmqPublisher publisher;
 

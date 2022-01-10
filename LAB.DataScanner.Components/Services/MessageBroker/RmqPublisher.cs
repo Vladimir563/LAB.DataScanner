@@ -1,11 +1,11 @@
-﻿using LAB.DataScanner.ConfigDatabaseApi.Contracts.MessageBroker;
+﻿using LAB.DataScanner.Components.Services.MessageBroker.Interfaces;
 using RabbitMQ.Client;
 
 namespace LAB.DataScanner.Components.Services.MessageBroker
 {
     public class RmqPublisher : IRmqPublisher
     {
-        private IModel _amqpChannel;
+        private readonly IModel _amqpChannel;
 
         private string _exchange;
 

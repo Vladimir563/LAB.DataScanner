@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNet.OData;
 using System.Collections.Generic;
 
-namespace LAB.DataScanner.ConfigDatabaseApi.Contracts.Services
+namespace LAB.DataScanner.ConfigDatabaseApi.BusinessLogic.Services
 {
     public interface IBaseService <T> where T : class
     {

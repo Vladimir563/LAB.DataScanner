@@ -1,5 +1,5 @@
 ﻿using FluentValidation;
-using LAB.DataScanner.ConfigDatabaseApi.Contracts.Services;
+using LAB.DataScanner.ConfigDatabaseApi.BusinessLogic.Services;
 using LAB.DataScanner.ConfigDatabaseApi.DataAccess.Entities;
 using Microsoft.AspNetCore.Mvc;
 

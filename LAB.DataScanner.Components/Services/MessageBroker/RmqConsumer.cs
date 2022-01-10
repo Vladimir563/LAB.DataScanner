@@ -1,4 +1,4 @@
-﻿using LAB.DataScanner.ConfigDatabaseApi.Contracts.MessageBroker;
+﻿using LAB.DataScanner.Components.Services.MessageBroker.Interfaces;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System;
@@ -7,19 +7,27 @@ namespace LAB.DataScanner.Components.Services.MessageBroker
 {
     public class RmqConsumer : IRmqConsumer
     {
-        private IModel _amqpChannel;
+        private readonly IModel _amqpChannel;
 
         private string _queueName;
 
         private string _consumerTag;
 
-        private EventingBasicConsumer _consumer;
+        private string _exchange;
 
-        public RmqConsumer(IModel amqpChannel, string queueName) 
+        private string _routingKey;
+
+        private readonly EventingBasicConsumer _consumer;
+
+        public RmqConsumer(IModel amqpChannel, string queueName, string exchange, string routingKey) 
         {
             _amqpChannel = amqpChannel;
 
             _queueName = queueName;
+
+            _exchange = exchange;
+
+            _routingKey = routingKey;
 
             _consumer = new EventingBasicConsumer(_amqpChannel);
         }
@@ -35,13 +43,17 @@ namespace LAB.DataScanner.Components.Services.MessageBroker
 
         public void SetQueue(string queueName) => _queueName = queueName;
 
+        public void SetExchange(string exchangeName) => _exchange = exchangeName;
+
+        public void SetRoutingKey(string routingKey) => _routingKey = routingKey;
+
         public IBasicConsumer GetBasicConsumer() => _consumer;
 
         public void StartListening(EventHandler<BasicDeliverEventArgs> onReceiveHandler)
         {
             _amqpChannel.QueueBind(queue: _queueName,
-                                   exchange: "UrlsGenerator/Gold",
-                                   routingKey: "#");
+                                   exchange: _exchange,
+                                   routingKey: _routingKey);
 
             Console.WriteLine(" [*] Waiting for messages. To exit press CTRL+C");
 

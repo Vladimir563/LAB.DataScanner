@@ -1,6 +1,6 @@
-﻿using LAB.DataScanner.ConfigDatabaseApi.Contracts.Repositories;
-using LAB.DataScanner.ConfigDatabaseApi.DataAccess.Entities;
+﻿using LAB.DataScanner.ConfigDatabaseApi.DataAccess.Entities;
 using LAB.DataScanner.ConfigDatabaseApi.DataAccess.Repositories;
+using LAB.DataScanner.ConfigDatabaseApi.DataAccess.RepositoriesInterfaces;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace LAB.DataScanner.ConfigDatabaseApi.DataAccess.Registrators

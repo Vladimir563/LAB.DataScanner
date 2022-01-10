@@ -1,5 +1,5 @@
 ﻿using LAB.DataScanner.Components.Services.MessageBroker;
-using LAB.DataScanner.ConfigDatabaseApi.Contracts.MessageBroker;
+using LAB.DataScanner.Components.Services.MessageBroker.Interfaces;
 using NSubstitute;
 using NUnit.Framework;
 using RabbitMQ.Client;
@@ -9,7 +9,7 @@ using System.Text;
 
 namespace LAB.DataScanner.Components.Tests.Unit.Services.MessageBroker
 {
-    public class RmqConsumerTest
+    public class RmqConsumerTests
     {
         #region Variables
         EventHandler<BasicDeliverEventArgs> onReceiveHandler;
@@ -32,7 +32,7 @@ namespace LAB.DataScanner.Components.Tests.Unit.Services.MessageBroker
 
             basicConsumer = Substitute.For<IEventingBasicConsumer>();
 
-            consumer = Substitute.For<RmqConsumer>(channel, "");
+            consumer = Substitute.For<RmqConsumer>(channel, "", "", "");
 
             onReceiveHandler = (model, ea) =>
             {

@@ -1,11 +1,8 @@
 ﻿using FluentValidation;
-using LAB.DataScanner.ConfigDatabaseApi.Contracts.Services;
-using LAB.DataScanner.ConfigDatabaseApi.DataAccess.EF;
+using LAB.DataScanner.ConfigDatabaseApi.BusinessLogic.Services;
 using LAB.DataScanner.ConfigDatabaseApi.DataAccess.Entities;
 using Microsoft.AspNet.OData;
 using Microsoft.AspNetCore.Mvc;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
 
 namespace LAB.DataScanner.ConfigDatabaseApi.Controllers
 {

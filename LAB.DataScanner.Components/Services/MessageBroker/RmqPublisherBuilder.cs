@@ -1,4 +1,4 @@
-﻿using LAB.DataScanner.ConfigDatabaseApi.Contracts.MessageBroker;
+﻿using LAB.DataScanner.Components.Services.MessageBroker.Interfaces;
 using Microsoft.Extensions.Configuration;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Exceptions;
@@ -41,9 +41,11 @@ namespace LAB.DataScanner.Components.Services.MessageBroker
 
         public RmqPublisherBuilder UsingConfigExchangeAndRoutingKey(IConfigurationSection configurationSection)
         {
-            _exchange = configurationSection.GetSection("Binding").GetSection("SenderExchange").Value;
+            //_exchange = configurationSection.GetSection("Binding").GetSection("SenderExchange").Value;
+            _exchange = configurationSection.GetSection("SenderExchange").Value;
 
-            _routingKey = configurationSection.GetSection("Binding").GetSection("SenderRoutingKeys").Value;
+            //_routingKey = configurationSection.GetSection("Binding").GetSection("SenderRoutingKeys").Value;
+            _routingKey = configurationSection.GetSection("SenderRoutingKeys").Value;
 
             return this;
         }

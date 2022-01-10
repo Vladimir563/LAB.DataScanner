@@ -2,7 +2,7 @@
 using RabbitMQ.Client.Events;
 using System;
 
-namespace LAB.DataScanner.ConfigDatabaseApi.Contracts.MessageBroker
+namespace LAB.DataScanner.Components.Services.MessageBroker.Interfaces
 {
     public interface IRmqConsumer : IDisposable
     {
@@ -10,6 +10,7 @@ namespace LAB.DataScanner.ConfigDatabaseApi.Contracts.MessageBroker
         public void StartListening(EventHandler<BasicDeliverEventArgs> onReceiveHandler);
         public void StopListening();
         public void SetQueue(string queueName);
+
         public IBasicConsumer GetBasicConsumer();
     }
 }

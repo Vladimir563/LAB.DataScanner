@@ -1,5 +1,6 @@
-﻿using LAB.DataScanner.ConfigDatabaseApi.Contracts.MessageBroker;
+﻿using LAB.DataScanner.Components.Services.MessageBroker.Interfaces;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Exceptions;
 using System;
@@ -14,6 +15,10 @@ namespace LAB.DataScanner.Components.Services.MessageBroker
 
         private string _queueName;
 
+        private string _exchange;
+
+        private string _routingKey;
+
         public RmqConsumerBuilder UsingQueue(string queueName) 
         {
             _queueName = queueName;
@@ -24,6 +29,17 @@ namespace LAB.DataScanner.Components.Services.MessageBroker
         public RmqConsumerBuilder UsingConfigQueueName(IConfigurationSection configurationSection)
         {
             _queueName = configurationSection.GetSection("ReceiverQueue").Value;
+
+            return this;
+        }
+
+        public RmqConsumerBuilder UsingConfigSettings(IConfigurationSection configurationSection)
+        {
+            _queueName = configurationSection.GetSection("ReceiverQueue").Value;
+
+            _exchange = configurationSection.GetSection("ReceiverExchange").Value;
+
+            _routingKey = JsonConvert.DeserializeObject<string[]>(configurationSection.GetSection("ReceiverRoutingKeys").Value ?? "")[0];
 
             return this;
         }
@@ -62,7 +78,7 @@ namespace LAB.DataScanner.Components.Services.MessageBroker
 
             _channel = _connection.CreateModel();
 
-            return new RmqConsumer(_channel, queueName: _queueName);
+            return new RmqConsumer(_channel, _queueName, _exchange, _routingKey);
         }
     }
 }
