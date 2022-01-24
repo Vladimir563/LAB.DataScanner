@@ -3,9 +3,10 @@
 
   },
   "Binding": {
-    "ReceiverQueue": "WebPageDownloader/Gold",
-    "SenderExchange": "UrlsGenerator/Gold",
-
+    "ReceiverQueue": "WebPageDownloaderQueue",
+    "ReceiverExchange": "UrlsGeneratorExchange",
+    "ReceiverRoutingKey": "#",
+    "SenderExchange": "WebPageDownloaderExchange",
     "SenderRoutingKeys": "['#']"
   },
   "ConnectionSettings": {

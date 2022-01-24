@@ -10,7 +10,6 @@ namespace LAB.DataScanner.Components.Services.MessageBroker.Interfaces
         public void StartListening(EventHandler<BasicDeliverEventArgs> onReceiveHandler);
         public void StopListening();
         public void SetQueue(string queueName);
-
         public IBasicConsumer GetBasicConsumer();
     }
 }

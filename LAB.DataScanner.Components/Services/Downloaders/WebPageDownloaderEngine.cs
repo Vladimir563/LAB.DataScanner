@@ -1,8 +1,12 @@
 ﻿using LAB.DataScanner.Components.Services.MessageBroker.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
+using RabbitMQ.Client.Events;
 using System;
+using System.Collections.Concurrent;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace LAB.DataScanner.Components.Services.Downloaders
 {
@@ -16,9 +20,17 @@ namespace LAB.DataScanner.Components.Services.Downloaders
 
         private readonly IRmqConsumer _rmqConsumer;
 
+        private readonly string[] _routingKeys;
+
+        private readonly string _exchangeName;
+
+        private readonly UrlsValidator _urlsValidator;
+
+        private ConcurrentStack<Task<string>> _htmlContentConcurrentStack;
 
         public WebPageDownloaderEngine(IConfigurationSection bindingConfiguration,
-            IDataRetriever dataRetriever, IRmqPublisher rmqPublisher, IRmqConsumer rmqConsumer)
+            IDataRetriever dataRetriever, IRmqPublisher rmqPublisher, 
+            IRmqConsumer rmqConsumer, UrlsValidator urlsValidator)
         {
             _bindingConfiguration = bindingConfiguration;
 
@@ -27,51 +39,57 @@ namespace LAB.DataScanner.Components.Services.Downloaders
             _rmqPublisher = rmqPublisher;
 
             _rmqConsumer = rmqConsumer;
+
+            _urlsValidator = urlsValidator;
+
+            _htmlContentConcurrentStack = new ConcurrentStack<Task<string>>();
+
+            _routingKeys = JsonConvert.DeserializeObject<string[]>(_bindingConfiguration
+                .GetSection("SenderRoutingKeys").Value ?? "");
+
+            _exchangeName = _bindingConfiguration.GetSection("SenderExchange").Value ?? "";
         }
-
-
-        public IRmqConsumer GetConsumer() => _rmqConsumer;
-
-        public IRmqPublisher GetPublisher() => _rmqPublisher;
 
         public void Start()
         {
-            var _routingKeys = JsonConvert.DeserializeObject<string[]>(_bindingConfiguration
-                .GetSection("SenderRoutingKeys").Value ?? "");
+            _rmqConsumer.StartListening(OnReceive);
 
-            var _exchangeName = _bindingConfiguration.GetSection("SenderExchange").Value;
+            Timer timer = new Timer(TimerCallBack, 0, 0, 15000);
 
-            _rmqConsumer.StartListening(async (model, ea) =>
-            {
-                var body = ea.Body.ToArray();
-
-                var url = Encoding.UTF8.GetString(body);
-
-                var routingKey = ea.RoutingKey;
-
-                _rmqConsumer.Ack(ea);
-
-                Console.WriteLine(" [x] Received '{0}':'{1}'",
-                                  routingKey,
-                                  url);
-
-                if (UrlIsValid(url))
-                {
-                    //get content by url
-                    string pageDataAsString = await _dataRetriever.RetrieveStringAsync(url);
-
-                    //sent to rabbitmq content which we got by url
-                    byte[] content = Encoding.UTF8.GetBytes(pageDataAsString);
-
-                    _rmqPublisher.Publish(content, _exchangeName, _routingKeys);
-                }
-            });
+            Console.ReadKey();
         }
 
-        private bool UrlIsValid(string uriString)
+        public void OnReceive(object model, BasicDeliverEventArgs ea) 
         {
-            return Uri.TryCreate(uriString, UriKind.RelativeOrAbsolute, out Uri uriResult)
-            && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
+            var body = ea.Body.ToArray();
+
+            var url = Encoding.UTF8.GetString(body);
+
+            var routingKey = ea.RoutingKey;
+
+            _rmqConsumer.Ack(ea);
+
+            Console.WriteLine("[x] Received '{0}':'{1}'", routingKey, url);
+
+            if (_urlsValidator.UrlIsValid(url))
+            {
+                _htmlContentConcurrentStack.Push(_dataRetriever.RetrieveStringAsync(url));
+            }     
+        }
+
+        private void TimerCallBack(object obj) 
+        {
+            Console.WriteLine("***Callback just has been called***");
+
+            while (_htmlContentConcurrentStack.Count > 0)
+            {
+                if (_htmlContentConcurrentStack.TryPop(out Task<string> htmlContent))
+                {
+                    var byteArrHtmlContent = Encoding.UTF8.GetBytes(htmlContent.Result);
+
+                    _rmqPublisher.Publish(byteArrHtmlContent, _exchangeName, _routingKeys);
+                }
+            }
         }
     }
 }

@@ -13,14 +13,13 @@ namespace LAB.DataScanner.UrlsGenerator
                         .AddJsonFile("appsettings.json")
                         .Build();
 
-            var applicationSection = configuration.GetSection("Application");
-
             var bindingSection = configuration.GetSection("Binding");
 
             var rmqPublisher = new RmqPublisherBuilder()
-                        .UsingDefaultConnectionSetting().Build();
+                .UsingConfigExchangeAndRoutingKey(bindingSection)
+                .UsingDefaultConnectionSetting().Build();
 
-            var service = new UrlsGeneratorEngine(rmqPublisher, applicationSection, bindingSection);
+            var service = new UrlsGeneratorEngine(rmqPublisher, configuration);
 
             service.Start();
         }

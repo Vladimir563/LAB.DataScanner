@@ -7,14 +7,18 @@ namespace LAB.DataScanner.RabbitMQ.Test
 {
     internal class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             var config = new ConfigurationBuilder()
             .AddJsonFile(@"F:\VS2022_source\repos\LAB.DataScanner\LAB.DataScanner.RabbitMQ.Test\config.json")
             .Build();
 
-            var customer = new RmqConsumerBuilder()
-                .UsingConfigQueueName(config.GetSection("Binding")).UsingConfigConnectionSettings(config.GetSection("ConnectionSettings")).Build();
+            var customer = new RmqConsumerBuilder(config.GetSection("Binding"))
+                .UsingConfigQueueName(config.GetSection("Binding"))
+                //.UsingQueue("WebPageDownloaderQueue")
+                //.WithQueueAutoCreation()
+                .UsingConfigConnectionSettings(config.GetSection("ConnectionSettings"))
+                .Build();
 
             customer.StartListening((model, ea) =>
             {

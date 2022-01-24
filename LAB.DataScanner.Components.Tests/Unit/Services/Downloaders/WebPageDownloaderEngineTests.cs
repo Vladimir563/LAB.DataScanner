@@ -1,11 +1,11 @@
 ﻿using LAB.DataScanner.Components.Services.Downloaders;
+using LAB.DataScanner.Components.Services.MessageBroker;
 using LAB.DataScanner.Components.Services.MessageBroker.Interfaces;
-using LAB.DataScanner.Components.Tests.Unit.Services.MessageBroker;
 using Microsoft.Extensions.Configuration;
 using NSubstitute;
 using NUnit.Framework;
+using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -13,56 +13,91 @@ namespace LAB.DataScanner.Components.Tests.Unit.Services.Downloaders
 {
     public class WebPageDownloaderEngineTests
     {
-        WebPageDownloaderEngine engineMock;
+        private BasicDeliverEventArgs _args;
 
-        IRmqConsumer rmqConsumerMock;
+        private IConfigurationRoot _fakeConfig;
 
-        IRmqPublisher rmqPublisherMock;
+        private IModel _amqpChannelMock;
 
-        IDataRetriever dataRetrieverMock;
+        private IRmqConsumer _rmqConsumerMock;
 
-        IConfigurationSection bindingSectionMock;
+        private IRmqPublisher _rmqPublisherMock;
 
-        IEventingBasicConsumer basicConsumer;
+        private WebPageDownloaderEngine _webPageDownloaderEngine;
 
-        BasicDeliverEventArgs args;
+        private IDataRetriever _dataRetriever;
 
         [SetUp]
         public void Setup()
         {
-            basicConsumer = Substitute.For<IEventingBasicConsumer>();
+            _args = Substitute.For<BasicDeliverEventArgs>();
 
-            args = Substitute.For<BasicDeliverEventArgs>();
+            var configDic = new Dictionary<string, string>
+            {
+                {"Binding:ReceiverQueue", "HtmlToJsonConverterQueue"},
+                {"Binding:ReceiverExchange", "WebPageDownloaderExchange"},
+                {"Binding:ReceiverRoutingKey", "#"},
+                {"Binding:SenderExchange", "HtmlToJsonConverterExchange"},
+                {"Binding:SenderRoutingKeys", "['#']"}
+            };
 
-            bindingSectionMock = Substitute.For<IConfigurationSection>();
+            var builder = new ConfigurationBuilder().AddInMemoryCollection(configDic);
 
-            rmqConsumerMock = Substitute.For<IRmqConsumer>();
+            _fakeConfig = builder.Build();
 
-            rmqPublisherMock = Substitute.For<IRmqPublisher>();
+            _amqpChannelMock = Substitute.For<IModel>();
 
-            dataRetrieverMock = Substitute.For<IDataRetriever>();
+            _rmqConsumerMock = Substitute.For<RmqConsumer>
+                (_amqpChannelMock, null);
 
-            engineMock = Substitute.For<WebPageDownloaderEngine>(bindingSectionMock, dataRetrieverMock, rmqPublisherMock, rmqConsumerMock);
+            _rmqPublisherMock = Substitute.For<IRmqPublisher>();
+
+            _dataRetriever = Substitute.For<IDataRetriever>();
+
+            _webPageDownloaderEngine = Substitute.For<WebPageDownloaderEngine>
+            (_fakeConfig.GetSection("Binding"),
+            _dataRetriever,
+            _rmqPublisherMock,
+            _rmqConsumerMock,
+            Substitute.For<UrlsValidator>());
         }
 
         [Test]
         public void ShouldSkipNotValidLink() 
         {
             //Assign
-            var notValidUrl = "not_valid_url";
+            var _invalidUrl = Encoding.UTF8.GetBytes("not_valid_url");
+
+            _args.Body = _invalidUrl;
 
             //Act
-            engineMock.Start();
+            _webPageDownloaderEngine.OnReceive(this, _args);
 
             //Assert
+            _rmqPublisherMock.DidNotReceive().Publish(new byte[] { }, "", new string[] { });
 
         }
 
         [Test]
-        public void ShouldHandleValidLink() { }
+        public void ShouldHandleValidLink() 
+        {
+            //Assign
+            var _validUrl = Encoding.UTF8.GetBytes("https://www.epam.com/careers/job-listings?query=1&country=Russia");
+
+            _args.Body = _validUrl;
+
+            //Act
+            _webPageDownloaderEngine.OnReceive(this, _args);
+
+            //Assert
+            _rmqPublisherMock.Received(1).Publish(Arg.Any<byte[]>(), Arg.Any<string>(), Arg.Any<string[]>());
+        }
 
         [Test]
-        public void ShouldPublishToExchangePageAsIsOnceSucessfullDownload() { }
+        public void ShouldPublishToExchangePageAsIsOnceSucessfullDownload() 
+        { 
+        
+        }
 
         [Test]
         public void ShouldAcknowledgeMessageOncePageDownloadingBeenComplete() { }

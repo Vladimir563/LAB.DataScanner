@@ -10,18 +10,18 @@ namespace LAB.DataScanner.Components.Tests.Unit.Services.Generators
 {
     public class UrlsGeneratorEngineTests
     {
-        IRmqPublisher rmqPublisherServiceMock;
+        private IRmqPublisher _rmqPublisherServiceMock;
 
         [SetUp]
         public void Setup()
         {
-            rmqPublisherServiceMock = Substitute.For<IRmqPublisher>();
+            _rmqPublisherServiceMock = Substitute.For<IRmqPublisher>();
         }
 
         [Test]
         public void ShouldGenerateAndPublishUrlsBasedOnConfiguration()
         {
-            //Arrange
+            //Assign
             var configDic = new Dictionary<string, string>
             {
                 { "Application:UrlTemplate", "http://testSite/{0}/{1}/{2}" },
@@ -35,16 +35,15 @@ namespace LAB.DataScanner.Components.Tests.Unit.Services.Generators
 
             var fakeConfigurationSection = builder.Build();
 
-            var urlsGenerator = Substitute.For<UrlsGeneratorEngine>(rmqPublisherServiceMock,
-                fakeConfigurationSection.GetSection("Application"),
-                fakeConfigurationSection.GetSection("Binding"));
+            var urlsGenerator = Substitute.For<UrlsGeneratorEngine>(_rmqPublisherServiceMock,
+                fakeConfigurationSection);
 
             //Act
             urlsGenerator.Start();
 
             //Assert
-            rmqPublisherServiceMock
-            .Received()
+            _rmqPublisherServiceMock
+            .Received(1)
             .Publish(Arg.Is<byte[]>(e => Encoding.UTF8.GetString(e) == "http://testSite/0/3/4"),
             Arg.Is("TargetExchange"),
             Arg.Is<string[]>(a => a[0].Equals("A")));
@@ -54,7 +53,7 @@ namespace LAB.DataScanner.Components.Tests.Unit.Services.Generators
         [Test]
         public void ShouldSkipPublishingIfNoAnyBindingsInfo()
         {
-            //Arrange
+            //Assign
             var configDic = new Dictionary<string, string>
             {
                 { "Application:UrlTemplate", "http://testSite/{0}/{1}/{2}" },
@@ -69,15 +68,14 @@ namespace LAB.DataScanner.Components.Tests.Unit.Services.Generators
 
             var fakeConfigurationSection = builder.Build();
 
-            var urlsGenerator = Substitute.For<UrlsGeneratorEngine>(rmqPublisherServiceMock,
-                fakeConfigurationSection.GetSection("Application"),
-                fakeConfigurationSection.GetSection("Binding"));
+            var urlsGenerator = Substitute.For<UrlsGeneratorEngine>(_rmqPublisherServiceMock,
+                fakeConfigurationSection);
 
             //Act
             urlsGenerator.Start();
 
             //Assert
-            rmqPublisherServiceMock
+            _rmqPublisherServiceMock
             .Received(0)
             .Publish(Arg.Is<byte[]>(e => Encoding.UTF8.GetString(e) == "http://testSite/0/3/4"),
             Arg.Is("TargetExchange"),

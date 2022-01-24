@@ -4,58 +4,58 @@ namespace LAB.DataScanner.Components.Services.MessageBroker
 {
     public abstract class RmqBaseBuilder<T> where T : class
     {
-        protected string userName;
+        protected string UserName;
 
-        protected string password;
+        protected string Password;
 
-        protected string hostName;
+        protected string HostName;
 
-        protected int port;
+        protected int Port;
 
-        protected string virtualHost;
+        protected string VirtualHost;
 
         public RmqBaseBuilder<T> UsingDefaultConnectionSetting()
         {
-            userName = "guest";
+            UserName = "guest";
 
-            password = "guest";
+            Password = "guest";
 
-            hostName = "localhost";
+            HostName = "localhost";
 
-            port = 5672;
+            Port = 5672;
 
-            virtualHost = "/";
+            VirtualHost = "/";
 
             return this; 
         }
 
         public RmqBaseBuilder<T> UsingConfigConnectionSettings(IConfigurationSection configurationSection)
         {
-            userName = configurationSection.GetSection("UserName").Value;
+            UserName = configurationSection.GetSection("UserName").Value;
 
-            password = configurationSection.GetSection("Password").Value;
+            Password = configurationSection.GetSection("Password").Value;
 
-            hostName = configurationSection.GetSection("HostName").Value;
+            HostName = configurationSection.GetSection("HostName").Value;
 
-            port = int.Parse(configurationSection.GetSection("Port").Value);
+            Port = int.Parse(configurationSection.GetSection("Port").Value);
 
-            virtualHost = configurationSection.GetSection("VirtualHost").Value;
+            VirtualHost = configurationSection.GetSection("VirtualHost").Value;
 
             return this;
         }
 
         public RmqBaseBuilder<T> UsingCustomHost(string hostName)
         {
-            this.hostName = hostName;
+            HostName = hostName;
 
             return this;
         }
 
         public RmqBaseBuilder<T> UsingCustomCredentials(string userName, string userPassword)
         {
-            this.userName = userName;
+            UserName = userName;
 
-            this.password = userPassword;
+            Password = userPassword;
 
             return this;
         }

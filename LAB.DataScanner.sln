@@ -23,7 +23,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LAB.DataScanner.UrlsGenerat
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LAB.DataScanner.WebPageDownloader", "LAB.DataScanner.WebPageDownloader\LAB.DataScanner.WebPageDownloader.csproj", "{6B0E8FF5-8623-45CE-874C-992BA5828996}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LAB.DataScanner.HtmlToJsonConverter", "LAB.DataScanner.HtmlToJsonConverter\LAB.DataScanner.HtmlToJsonConverter.csproj", "{A36D3975-42DD-4AA3-A557-8A453F865ED6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LAB.DataScanner.HtmlToJsonConverter", "LAB.DataScanner.HtmlToJsonConverter\LAB.DataScanner.HtmlToJsonConverter.csproj", "{A36D3975-42DD-4AA3-A557-8A453F865ED6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

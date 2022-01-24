@@ -12,9 +12,11 @@ namespace LAB.DataScanner.Components.Services.MessageBroker
 
         private IConnection _connection;
 
-        private string _exchange = "";
+        private string _exchange;
 
-        private string _routingKey = ""; 
+        private string _routingKey = "#";
+
+        private bool _isExchangeAutoCreation = false;
 
         public RmqPublisherBuilder UsingExchange(string exchange) 
         {
@@ -41,20 +43,16 @@ namespace LAB.DataScanner.Components.Services.MessageBroker
 
         public RmqPublisherBuilder UsingConfigExchangeAndRoutingKey(IConfigurationSection configurationSection)
         {
-            //_exchange = configurationSection.GetSection("Binding").GetSection("SenderExchange").Value;
             _exchange = configurationSection.GetSection("SenderExchange").Value;
 
-            //_routingKey = configurationSection.GetSection("Binding").GetSection("SenderRoutingKeys").Value;
-            _routingKey = configurationSection.GetSection("SenderRoutingKeys").Value;
+            _routingKey = configurationSection.GetSection("SenderRoutingKey").Value;
 
             return this;
         }
 
         public RmqPublisherBuilder WithExchangeAutoCreation()
         {
-            var autoGenExchange = "exchange_" + Guid.NewGuid();
-
-            _exchange = autoGenExchange;
+            _isExchangeAutoCreation = true;
 
             return this;
         }
@@ -63,11 +61,11 @@ namespace LAB.DataScanner.Components.Services.MessageBroker
         {
             var connectionFactory = new ConnectionFactory
             {
-                UserName = this.userName,
-                Password = this.password,
-                HostName = this.hostName,
-                Port = this.port,
-                VirtualHost = this.virtualHost
+                UserName = this.UserName,
+                Password = this.Password,
+                HostName = this.HostName,
+                Port = this.Port,
+                VirtualHost = this.VirtualHost
             };
 
             try
@@ -85,6 +83,13 @@ namespace LAB.DataScanner.Components.Services.MessageBroker
             PreparePublisherConnection();
 
             _channel = _connection.CreateModel();
+
+            if (_exchange is null || _isExchangeAutoCreation) 
+            {
+                _exchange = "exchange_" + Guid.NewGuid();
+            }
+
+            _channel.ExchangeDeclare(_exchange, "topic");
 
             return new RmqPublisher(_channel, _exchange, _routingKey);
         }

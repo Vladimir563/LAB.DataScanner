@@ -10,7 +10,7 @@ namespace LAB.DataScanner.RabbitMQ.TestPublisher
         {
             RmqPublisherBuilder publisherBuilder = new RmqPublisherBuilder();
 
-            var publisher = publisherBuilder.UsingExchangeAndRoutingKey("UrlsGenerator/Gold", "#")
+            var publisher = publisherBuilder.UsingExchangeAndRoutingKey("UrlsGeneratorExchange", "#")
                 .UsingDefaultConnectionSetting()
                 .Build();
 

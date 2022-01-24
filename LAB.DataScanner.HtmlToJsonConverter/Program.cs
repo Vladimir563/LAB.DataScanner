@@ -1,14 +1,36 @@
-﻿using System;
+﻿using Microsoft.Extensions.Configuration;
+using System;
+using LAB.DataScanner.Components.Services.MessageBroker;
+using LAB.DataScanner.Components.Services.Converters;
 
 namespace LAB.DataScanner.HtmlToJsonConverter
 {
     internal class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
-            Console.WriteLine("Hello World!");
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(System.IO.Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json")
+                .Build();
 
-            //consider using Html Agility Pack for parsing html to json
+            var rmqPublisher = new RmqPublisherBuilder()
+                .UsingConfigExchangeAndRoutingKey(configuration.GetSection("Binding"))
+                .UsingDefaultConnectionSetting()
+                .Build();
+
+            var rmqConsumer = new RmqConsumerBuilder(configuration.GetSection("Binding"))
+                .UsingConfigQueueName(configuration.GetSection("Binding"))
+                .UsingConfigConnectionSettings(configuration.GetSection("ConnectionSettings"))
+                .Build();
+
+            var htmlToJsonConverterEngine = new HtmlToJsonConverterEngine(configuration, rmqPublisher, rmqConsumer);
+
+            htmlToJsonConverterEngine.Start();
+
+            Console.ReadKey();
+
+            //features / featureName for azure
         }
     }
 }

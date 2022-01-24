@@ -12,30 +12,28 @@ namespace LAB.DataScanner.Components.Services.Generators
     {
         private readonly IRmqPublisher _rmqPublisher;
 
-        private readonly IConfigurationSection _applicationSection;
+        private readonly IConfigurationRoot _urlsGeneratorSettings;
 
-        private readonly IConfigurationSection _bindingSection;
-
-        public UrlsGeneratorEngine(IRmqPublisher rmqPublisher, IConfigurationSection applicationSection, 
-            IConfigurationSection bindingSection)
+        public UrlsGeneratorEngine(IRmqPublisher rmqPublisher, IConfigurationRoot urlsGeneratorSettings)
         {
             _rmqPublisher = rmqPublisher;
 
-            _applicationSection = applicationSection;
-
-            _bindingSection = bindingSection;
+            _urlsGeneratorSettings = urlsGeneratorSettings;
         }
 
         public void Start() 
         {
-            var templateUrl = _applicationSection.GetSection("UrlTemplate").Value;
+            var templateUrl = _urlsGeneratorSettings.GetSection("Application:UrlTemplate").Value ?? "";
 
-            var rangeOptions = JsonConvert.DeserializeObject<string[]>(_applicationSection.GetSection("Sequences").Value)
+            var rangeOptions = JsonConvert.DeserializeObject<string[]>(_urlsGeneratorSettings
+                .GetSection("Application:Sequences").Value)
                 .Select(s => s.Split("..")).Select(s => s.Select(a => int.Parse(a))).ToList();
+            
+            var exchangeName = _urlsGeneratorSettings
+                .GetSection("Binding:SenderExchange").Value ?? "";
 
-            var exchangeName = _bindingSection.GetSection("SenderExchange").Value;
-
-            var routingKeys = JsonConvert.DeserializeObject<string[]>(_bindingSection.GetSection("SenderRoutingKeys").Value ?? "");
+            var routingKeys = JsonConvert.DeserializeObject<string[]>(_urlsGeneratorSettings
+                .GetSection("Binding:SenderRoutingKeys").Value ?? "");
 
             var urlsList = BuildUrlsList(templateUrl, rangeOptions);
 
@@ -44,9 +42,13 @@ namespace LAB.DataScanner.Components.Services.Generators
 
         public IEnumerable<string> BuildUrlsList(string templateUrl, List<IEnumerable<int>> rangeOptions) 
         {
-            Regex pattern = new Regex("");
-
             List<string> urlsList = new List<string>();
+
+            if (rangeOptions.Count == 0 || rangeOptions is null) 
+            {
+                //logging exception
+                return urlsList;
+            }
 
             var urlSequences = rangeOptions.Select(s => s.ToArray()).Select(a =>
             {
@@ -72,7 +74,7 @@ namespace LAB.DataScanner.Components.Services.Generators
 
                 for (int j = 0; j < rangeOptions.Count; j++)
                 {
-                    pattern = new Regex(@"\{" + rangeIndex++ + @"\}");
+                    var pattern = new Regex(@"\{" + rangeIndex++ + @"\}");
 
                     newUrlString = pattern.Replace(newUrlString, crossP[i][j].ToString());
                 }
