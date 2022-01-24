@@ -65,11 +65,7 @@ namespace LAB.DataScanner.Components.Services.Downloaders
 
             var url = Encoding.UTF8.GetString(body);
 
-            var routingKey = ea.RoutingKey;
-
             _rmqConsumer.Ack(ea);
-
-            Console.WriteLine("[x] Received '{0}':'{1}'", routingKey, url);
 
             if (_urlsValidator.UrlIsValid(url))
             {
