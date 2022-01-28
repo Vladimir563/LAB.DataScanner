@@ -1,12 +1,10 @@
 ﻿using HtmlAgilityPack;
-using Jsonize;
-using Jsonize.Parser;
-using Jsonize.Serializer.Json.Net;
 using LAB.DataScanner.Components.Services.MessageBroker.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using RabbitMQ.Client.Events;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
@@ -24,6 +22,12 @@ namespace LAB.DataScanner.Components.Services.Converters
 
         private readonly string _exchangeName;
 
+        private readonly string _commonPattern;
+
+        private readonly string [] _columsNamesArr;
+
+        private readonly string [] _patterns;
+
         public HtmlToJsonConverterEngine(IConfigurationRoot htmlToJsonConverterEngineSettings, 
             IRmqPublisher rmqPublisher, IRmqConsumer rmqConsumer)
         {
@@ -38,6 +42,17 @@ namespace LAB.DataScanner.Components.Services.Converters
 
             _exchangeName = _htmlToJsonConverterEngineSettings
                 .GetSection("Binding:SenderExchange").Value ?? "";
+
+            var colums = htmlToJsonConverterEngineSettings.GetSection("DBTableCreationSettings:colums").Value;
+
+            var columsArr = colums.Split(',');
+
+            _columsNamesArr = columsArr.Select(p => p.Trim().Split(' ')).Select(p => p[0]).ToArray();
+
+            _commonPattern = htmlToJsonConverterEngineSettings
+                .GetSection("Application:HtmlFragmentExpression").Value;
+
+            _patterns = _commonPattern.Split('&').ToArray();
         }
 
         public void Start() 
@@ -47,11 +62,9 @@ namespace LAB.DataScanner.Components.Services.Converters
 
         public string ParseHtmlToJson(string htmlContent) 
         {
-            string htmlNodesString = string.Empty;
+            List<HtmlNodeCollection> extractedHtmlNodes = new List<HtmlNodeCollection>();
 
             var htmlDoc = new HtmlDocument();
-
-            htmlDoc.LoadHtml(htmlContent);
 
             var htmlFragmentStrategy = _htmlToJsonConverterEngineSettings.GetSection("Application:HtmlFragmentStrategy").Value ?? "";
 
@@ -71,20 +84,20 @@ namespace LAB.DataScanner.Components.Services.Converters
             //select parsing strategy pattern
             if (htmlFragmentStrategy.Equals("SelectNodes", StringComparison.OrdinalIgnoreCase))
             {
-                var nodes = htmlDoc.DocumentNode.SelectNodes($"{htmlFragmentExpression}");
+                //var nodes = htmlDoc.DocumentNode.SelectNodes($"{htmlFragmentExpression}");
 
-                htmlNodesString = $"{String.Join($"\n\n", nodes.Select(p => p.OuterHtml).ToArray())}";
+                extractedHtmlNodes = GetExtractedHtmlNodeCollection(htmlDoc, htmlContent, false);
+
+                //htmlNodesString = $"{String.Join($"\n\n\n", nodes.Select(p => p.InnerHtml).ToArray())}"; 
             }
             else
             {
-                htmlNodesString = htmlDoc.DocumentNode.SelectSingleNode($"{htmlFragmentExpression}").OuterHtml;
+                extractedHtmlNodes = GetExtractedHtmlNodeCollection(htmlDoc, htmlContent, true);
+
+                //htmlNodesString = htmlDoc.DocumentNode.SelectSingleNode($"{htmlFragmentExpression}").InnerHtml;
             }
 
-            var jsonContent = GetJsonFromHtmlString(htmlNodesString);
-
-            Console.WriteLine(jsonContent);
-
-            return jsonContent;
+            return HtmlToJsonParse(extractedHtmlNodes, _columsNamesArr);
         }
 
         public void OnReceive(object model, BasicDeliverEventArgs ea)
@@ -107,15 +120,51 @@ namespace LAB.DataScanner.Components.Services.Converters
             }
         }
 
-        private string GetJsonFromHtmlString(string htmlContent) 
+        public List<HtmlNodeCollection> GetExtractedHtmlNodeCollection(HtmlDocument htmlDoc, string htmlContent, bool isSingleNodeRequire)
         {
-            JsonizeParser parser = new JsonizeParser();
+            htmlDoc.LoadHtml(htmlContent);
 
-            JsonizeSerializer serializer = new JsonizeSerializer();
+            List<HtmlNodeCollection> nodeCollectionList = new List<HtmlNodeCollection>();
 
-            Jsonizer jsonizer = new Jsonizer(parser, serializer);
+            if (isSingleNodeRequire) 
+            {
+                var singleNode = htmlDoc.DocumentNode.SelectSingleNode(_patterns[0]);
 
-            return jsonizer.ParseToStringAsync(htmlContent).Result;
+                var singleNodeCollection = new HtmlNodeCollection(singleNode);
+
+                nodeCollectionList.Add(singleNodeCollection);
+            }
+
+            foreach (var item in _patterns)
+            {
+                var htmlNodes = htmlDoc.DocumentNode.SelectNodes(item);
+
+                nodeCollectionList.Add(htmlNodes);
+            }
+
+            return nodeCollectionList;
+        }
+
+        public static string HtmlToJsonParse(List<HtmlNodeCollection> nodeCollectionList, string[] columsNamesArr)
+        {
+            StringBuilder nodesHtmlString = new StringBuilder();
+
+            for (int i = 0; i < nodeCollectionList.Count; i++)
+            {
+                int index = 0;
+
+                nodesHtmlString.AppendLine("{");
+
+                foreach (var item in nodeCollectionList)
+                {
+                    nodesHtmlString.AppendLine($"\"{columsNamesArr[index++]}\" : \"{item[i].InnerText}\"{(index < nodeCollectionList.Count ? ',' : ' ')}");
+                }
+                nodesHtmlString.AppendLine("}" + $"{(i == nodeCollectionList.Count - 1 ? ' ' : ',')}");
+            }
+
+            var nodesHtmlStringPrep = $"{String.Join($"", nodesHtmlString.ToString().Select(ch => ch.Equals('\'') ? "\'\'" : ch.ToString()).ToArray())}";
+
+            return $"N'[\n{nodesHtmlStringPrep}]'";
         }
     }
 }

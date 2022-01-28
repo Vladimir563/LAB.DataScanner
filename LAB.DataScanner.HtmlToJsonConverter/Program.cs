@@ -2,6 +2,7 @@
 using System;
 using LAB.DataScanner.Components.Services.MessageBroker;
 using LAB.DataScanner.Components.Services.Converters;
+using System.IO;
 
 namespace LAB.DataScanner.HtmlToJsonConverter
 {
@@ -10,7 +11,7 @@ namespace LAB.DataScanner.HtmlToJsonConverter
         static void Main()
         {
             var configuration = new ConfigurationBuilder()
-                .SetBasePath(System.IO.Directory.GetCurrentDirectory())
+                .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json")
                 .Build();
 
@@ -29,8 +30,6 @@ namespace LAB.DataScanner.HtmlToJsonConverter
             htmlToJsonConverterEngine.Start();
 
             Console.ReadKey();
-
-            //features / featureName for azure
         }
     }
 }

@@ -15,15 +15,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LAB.DataScanner.Components"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LAB.DataScanner.Components.Tests", "LAB.DataScanner.Components.Tests\LAB.DataScanner.Components.Tests.csproj", "{7C2945ED-EFAC-4C01-AE79-4CC688CED161}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LAB.DataScanner.RabbitMQ.TestConsumer", "LAB.DataScanner.RabbitMQ.Test\LAB.DataScanner.RabbitMQ.TestConsumer.csproj", "{3FD649F4-049C-4780-BD0C-BC3E12F4717B}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LAB.DataScanner.RabbitMQ.TestPublisher", "LAB.DataScanner.RabbitMQ.TestPublisher\LAB.DataScanner.RabbitMQ.TestPublisher.csproj", "{254DE15F-7DDD-4533-8B37-B87C5C544D05}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LAB.DataScanner.UrlsGenerator", "LAB.DataScanner.UrlsGenerator\LAB.DataScanner.UrlsGenerator.csproj", "{10D3351E-EFF6-41BB-B237-66EB2D5A2D03}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LAB.DataScanner.WebPageDownloader", "LAB.DataScanner.WebPageDownloader\LAB.DataScanner.WebPageDownloader.csproj", "{6B0E8FF5-8623-45CE-874C-992BA5828996}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LAB.DataScanner.HtmlToJsonConverter", "LAB.DataScanner.HtmlToJsonConverter\LAB.DataScanner.HtmlToJsonConverter.csproj", "{A36D3975-42DD-4AA3-A557-8A453F865ED6}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LAB.DataScanner.SimpleTableDBPersister", "LAB.DataScanner.SimpleTableDBPersister\LAB.DataScanner.SimpleTableDBPersister.csproj", "{DC978E19-1D11-419E-A2AD-76B30926E5F9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -57,14 +55,6 @@ Global
 		{7C2945ED-EFAC-4C01-AE79-4CC688CED161}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7C2945ED-EFAC-4C01-AE79-4CC688CED161}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7C2945ED-EFAC-4C01-AE79-4CC688CED161}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3FD649F4-049C-4780-BD0C-BC3E12F4717B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3FD649F4-049C-4780-BD0C-BC3E12F4717B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3FD649F4-049C-4780-BD0C-BC3E12F4717B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3FD649F4-049C-4780-BD0C-BC3E12F4717B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{254DE15F-7DDD-4533-8B37-B87C5C544D05}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{254DE15F-7DDD-4533-8B37-B87C5C544D05}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{254DE15F-7DDD-4533-8B37-B87C5C544D05}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{254DE15F-7DDD-4533-8B37-B87C5C544D05}.Release|Any CPU.Build.0 = Release|Any CPU
 		{10D3351E-EFF6-41BB-B237-66EB2D5A2D03}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{10D3351E-EFF6-41BB-B237-66EB2D5A2D03}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{10D3351E-EFF6-41BB-B237-66EB2D5A2D03}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -77,6 +67,10 @@ Global
 		{A36D3975-42DD-4AA3-A557-8A453F865ED6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A36D3975-42DD-4AA3-A557-8A453F865ED6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A36D3975-42DD-4AA3-A557-8A453F865ED6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DC978E19-1D11-419E-A2AD-76B30926E5F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DC978E19-1D11-419E-A2AD-76B30926E5F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DC978E19-1D11-419E-A2AD-76B30926E5F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DC978E19-1D11-419E-A2AD-76B30926E5F9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
