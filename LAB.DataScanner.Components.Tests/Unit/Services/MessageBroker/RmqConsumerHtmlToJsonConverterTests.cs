@@ -1,12 +1,13 @@
-﻿using LAB.DataScanner.Components.Services.Converters;
+﻿using LAB.DataScanner.Components.Interfaces.Converters;
+using LAB.DataScanner.Components.Services.Converters;
 using LAB.DataScanner.Components.Services.MessageBroker;
 using LAB.DataScanner.Components.Services.MessageBroker.Interfaces;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 using NUnit.Framework;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using System.Collections.Generic;
 using System.Text;
 
 namespace LAB.DataScanner.Components.Tests.Unit.Services.MessageBroker
@@ -19,6 +20,8 @@ namespace LAB.DataScanner.Components.Tests.Unit.Services.MessageBroker
 
         private IConfigurationRoot _fakeConfig;
 
+        private ILogger _logger;
+
         [SetUp]
         public void Setup()
         {
@@ -28,51 +31,35 @@ namespace LAB.DataScanner.Components.Tests.Unit.Services.MessageBroker
 
             _args.Body = _fakeHtmlContent;
 
-            var configDic = new Dictionary<string, string>
-            {
-                {"Application:HtmlDataDownloadingMethod", "dynamic"},
-                {"Application:WebBrowser", "chrome"},
-                {"Application:HtmlFragmentStrategy", "selectNodes"},
-                {"Application:HtmlFragmentExpression", "//*[@class='search-result__item']"},
+            _logger = Substitute.For<ILogger<HtmlToJsonConverterEngine>>();
 
-                {"Binding:ReceiverQueue", "HtmlToJsonConverterQueue"},
-                {"Binding:ReceiverExchange", "WebPageDownloaderExchange"},
-                {"Binding:ReceiverRoutingKey", "#"},
-                {"Binding:SenderExchange", "HtmlToJsonConverterExchange"},
-                {"Binding:SenderRoutingKeys", "['#']"},
-
-                {"HtmlDataDownloadingSettingsArrs:HtmlDataDownloadingMethods","['dynamic','static']"},
-                {"HtmlDataDownloadingSettingsArrs:WebBrowsers","['chrome','fireFox','mozilla','microsoftEdge','opera']"},
-                {"HtmlDataDownloadingSettingsArrs:HtmlFragmentStrategies","['selectNodes','selectSingleNode']"}
-            };
-
-            var builder = new ConfigurationBuilder().AddInMemoryCollection(configDic);
-
-            _fakeConfig = builder.Build();
+            _fakeConfig = Substitute.For<IConfigurationRoot>();
 
         }
         [Test]
         public void ShouldCall_AckMessage_OnceTheyArrivedAndHandled()
         {
-            //Assign
+            //Arrange
             IRmqConsumer _rmqConsumerMock = Substitute.For<IRmqConsumer>();
 
             HtmlToJsonConverterEngine _htmlToJsonConverterEngine = Substitute.For<HtmlToJsonConverterEngine>
             (_fakeConfig,
             Substitute.For<IRmqPublisher>(),
-            _rmqConsumerMock);
+            _rmqConsumerMock,
+            _logger);
 
             //Act
             _htmlToJsonConverterEngine.OnReceive(this, _args);
 
             //Assert
             _rmqConsumerMock.Received(1).Ack(_args);
+
         }
 
         [Test]
         public void ShouldCall_BasicConsume_OnceStartListening()
         {
-            //Assign
+            //Arrange
             IModel _amqpChannelMock = Substitute.For<IModel>();
 
             IRmqConsumer _rmqConsumerMock = Substitute.For<RmqConsumer>
@@ -81,7 +68,8 @@ namespace LAB.DataScanner.Components.Tests.Unit.Services.MessageBroker
             HtmlToJsonConverterEngine _htmlToJsonConverterEngine = Substitute.For<HtmlToJsonConverterEngine>
             (_fakeConfig,
             Substitute.For<IRmqPublisher>(),
-            _rmqConsumerMock);
+            _rmqConsumerMock,
+            _logger);
 
             //Act
             _rmqConsumerMock.StartListening(_htmlToJsonConverterEngine.OnReceive);
@@ -93,7 +81,7 @@ namespace LAB.DataScanner.Components.Tests.Unit.Services.MessageBroker
         [Test]
         public void ShouldCall_BasicCancel_OnceStopListening()
         {
-            //Assign
+            //Arrange
             IModel _amqpChannelMock = Substitute.For<IModel>();
 
             IRmqConsumer _rmqConsumerMock = Substitute.For<RmqConsumer>

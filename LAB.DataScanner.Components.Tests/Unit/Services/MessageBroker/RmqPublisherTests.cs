@@ -16,7 +16,7 @@ namespace LAB.DataScanner.Components.Tests.Unit.Services.MessageBroker
         [SetUp]
         public void Setup()
         {
-            //Assign
+            //Arrange
             publisherBuilder = Substitute.For<RmqPublisherBuilder>();
 
             message = new byte[] { };

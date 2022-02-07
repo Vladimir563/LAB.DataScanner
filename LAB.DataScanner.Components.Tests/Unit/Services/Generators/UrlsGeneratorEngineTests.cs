@@ -1,6 +1,7 @@
 ﻿using LAB.DataScanner.Components.Services.Generators;
 using LAB.DataScanner.Components.Services.MessageBroker.Interfaces;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 using NUnit.Framework;
 using System.Collections.Generic;
@@ -12,16 +13,20 @@ namespace LAB.DataScanner.Components.Tests.Unit.Services.Generators
     {
         private IRmqPublisher _rmqPublisherServiceMock;
 
+        private ILogger _logger;
+
         [SetUp]
         public void Setup()
         {
             _rmqPublisherServiceMock = Substitute.For<IRmqPublisher>();
+
+            _logger = Substitute.For<ILogger<UrlsGeneratorEngine>>();
         }
 
         [Test]
         public void ShouldGenerateAndPublishUrlsBasedOnConfiguration()
         {
-            //Assign
+            //Arrange
             var configDic = new Dictionary<string, string>
             {
                 { "Application:UrlTemplate", "http://testSite/{0}/{1}/{2}" },
@@ -33,13 +38,13 @@ namespace LAB.DataScanner.Components.Tests.Unit.Services.Generators
 
             var builder = new ConfigurationBuilder().AddInMemoryCollection(configDic);
 
-            var fakeConfigurationSection = builder.Build();
+            var fakeConfiguration = builder.Build();
 
             var urlsGenerator = Substitute.For<UrlsGeneratorEngine>(_rmqPublisherServiceMock,
-                fakeConfigurationSection);
+                fakeConfiguration, _logger);
 
             //Act
-            urlsGenerator.Start();
+            urlsGenerator.Generate();
 
             //Assert
             _rmqPublisherServiceMock
@@ -53,7 +58,7 @@ namespace LAB.DataScanner.Components.Tests.Unit.Services.Generators
         [Test]
         public void ShouldSkipPublishingIfNoAnyBindingsInfo()
         {
-            //Assign
+            //Arrange
             var configDic = new Dictionary<string, string>
             {
                 { "Application:UrlTemplate", "http://testSite/{0}/{1}/{2}" },
@@ -69,10 +74,10 @@ namespace LAB.DataScanner.Components.Tests.Unit.Services.Generators
             var fakeConfigurationSection = builder.Build();
 
             var urlsGenerator = Substitute.For<UrlsGeneratorEngine>(_rmqPublisherServiceMock,
-                fakeConfigurationSection);
+                fakeConfigurationSection, _logger);
 
             //Act
-            urlsGenerator.Start();
+            urlsGenerator.Generate();
 
             //Assert
             _rmqPublisherServiceMock

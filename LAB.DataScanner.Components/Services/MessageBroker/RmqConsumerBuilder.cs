@@ -1,5 +1,6 @@
 ﻿using LAB.DataScanner.Components.Services.MessageBroker.Interfaces;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Exceptions;
 using System;
@@ -12,7 +13,9 @@ namespace LAB.DataScanner.Components.Services.MessageBroker
 
         private IConnection _connection;
 
-        private readonly IConfigurationSection _bindingSection;
+        private readonly IConfigurationRoot _configuration;
+
+        private ILogger<RmqBaseBuilder<IRmqConsumer>> _logger;
 
         private string _queueName;
 
@@ -22,9 +25,9 @@ namespace LAB.DataScanner.Components.Services.MessageBroker
 
         private bool _isQueueAutoCreation = false;
 
-        public RmqConsumerBuilder(IConfigurationSection bindingSection)
+        public RmqConsumerBuilder(IConfigurationRoot configuration)
         {
-            _bindingSection = bindingSection;
+            _configuration = configuration;
         }
 
         public RmqConsumerBuilder UsingQueue(string queueName) 
@@ -36,7 +39,7 @@ namespace LAB.DataScanner.Components.Services.MessageBroker
 
         public RmqConsumerBuilder UsingConfigQueueName(IConfigurationSection bindingSection)
         {
-            _queueName = bindingSection.GetSection("ReceiverQueue").Value;
+            _queueName = bindingSection.GetSection("Binding:ReceiverQueue").Value;
 
             return this;
         }
@@ -50,6 +53,8 @@ namespace LAB.DataScanner.Components.Services.MessageBroker
 
         private void PrepareConsumerConnection() 
         {
+            _logger.LogInformation("PrepareConsumerConnection() method has been executed.");
+
             var connectionFactory = new ConnectionFactory
             {
                 UserName = this.UserName,
@@ -63,9 +68,9 @@ namespace LAB.DataScanner.Components.Services.MessageBroker
             {
                 _connection = connectionFactory.CreateConnection();
             }
-            catch (BrokerUnreachableException)
+            catch (BrokerUnreachableException e)
             {
-                throw new NullReferenceException("Connection to rabbitmq server failed.");
+                _logger?.LogError($"RmqConsumerBuilder: Connection to rabbitmq server has been failed [{e.Message}]");
             }
         }
 
@@ -80,9 +85,9 @@ namespace LAB.DataScanner.Components.Services.MessageBroker
                 _queueName = "queue_" + Guid.NewGuid();
             }
 
-            _exchange = _bindingSection.GetSection("ReceiverExchange").Value ?? "";
+            _exchange = _configuration.GetSection("Binding:ReceiverExchange").Value ?? "";
 
-            _routingKey = _bindingSection.GetSection("ReceiverRoutingKey").Value ?? "";
+            _routingKey = _configuration.GetSection("Binding:ReceiverRoutingKey").Value ?? "";
 
             #endregion
 
@@ -97,6 +102,13 @@ namespace LAB.DataScanner.Components.Services.MessageBroker
             routingKey: _routingKey);
 
             return new RmqConsumer(_channel, _queueName);
+        }
+
+        public override RmqBaseBuilder<IRmqConsumer> UsingLogger(ILogger<RmqBaseBuilder<IRmqConsumer>> logger)
+        {
+            _logger = logger;
+
+            return this;
         }
     }
 }

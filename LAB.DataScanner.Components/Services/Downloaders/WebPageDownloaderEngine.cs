@@ -1,18 +1,18 @@
-﻿using LAB.DataScanner.Components.Services.MessageBroker.Interfaces;
+﻿using LAB.DataScanner.Components.Interfaces.Downloaders;
+using LAB.DataScanner.Components.Services.MessageBroker.Interfaces;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using RabbitMQ.Client.Events;
-using System;
 using System.Collections.Concurrent;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace LAB.DataScanner.Components.Services.Downloaders
 {
-    public class WebPageDownloaderEngine
+    public class WebPageDownloaderEngine : IDownloaderEngine
     {
-        private readonly IConfigurationSection _bindingConfiguration;
+        private readonly IConfigurationRoot _configuration;
 
         private readonly IDataRetriever _dataRetriever;
 
@@ -24,15 +24,15 @@ namespace LAB.DataScanner.Components.Services.Downloaders
 
         private readonly string _exchangeName;
 
-        private readonly UrlsValidator _urlsValidator;
+        private readonly IUrlsValidator _urlsValidator;
 
-        private ConcurrentStack<Task<string>> _htmlContentConcurrentStack;
+        private readonly ILogger<WebPageDownloaderEngine> _logger;
 
-        public WebPageDownloaderEngine(IConfigurationSection bindingConfiguration,
+        public WebPageDownloaderEngine(IConfigurationRoot configuration,
             IDataRetriever dataRetriever, IRmqPublisher rmqPublisher, 
-            IRmqConsumer rmqConsumer, UrlsValidator urlsValidator)
+            IRmqConsumer rmqConsumer, IUrlsValidator urlsValidator, ILogger<WebPageDownloaderEngine> logger)
         {
-            _bindingConfiguration = bindingConfiguration;
+            _configuration = configuration;
 
             _dataRetriever = dataRetriever;
 
@@ -42,21 +42,19 @@ namespace LAB.DataScanner.Components.Services.Downloaders
 
             _urlsValidator = urlsValidator;
 
-            _htmlContentConcurrentStack = new ConcurrentStack<Task<string>>();
+            _logger = logger;
 
-            _routingKeys = JsonConvert.DeserializeObject<string[]>(_bindingConfiguration
-                .GetSection("SenderRoutingKeys").Value ?? "");
+            _routingKeys = JsonConvert.DeserializeObject<string[]>(_configuration
+                .GetSection("Binding:SenderRoutingKeys").Value ?? "");
 
-            _exchangeName = _bindingConfiguration.GetSection("SenderExchange").Value ?? "";
+            _exchangeName = _configuration.GetSection("Binding:SenderExchange").Value ?? "";
         }
 
-        public void Start()
+        public void StartEngine()
         {
+            _logger.LogInformation("DownloaderEngine has been started");
+
             _rmqConsumer.StartListening(OnReceive);
-
-            Timer timer = new Timer(TimerCallBack, 0, 0, 15000);
-
-            Console.ReadKey();
         }
 
         public void OnReceive(object model, BasicDeliverEventArgs ea) 
@@ -67,25 +65,25 @@ namespace LAB.DataScanner.Components.Services.Downloaders
 
             _rmqConsumer.Ack(ea);
 
-            if (_urlsValidator.UrlIsValid(url))
+            Task.Run(async () =>
             {
-                _htmlContentConcurrentStack.Push(_dataRetriever.RetrieveStringAsync(url));
-            }     
+                await ProcessUrlAsync(url);
+            });
         }
 
-        private void TimerCallBack(object obj) 
+        private async Task ProcessUrlAsync(string url)
         {
-            Console.WriteLine("***Callback just has been called***");
-
-            while (_htmlContentConcurrentStack.Count > 0)
+            if (!_urlsValidator.IsUrlValid(url))
             {
-                if (_htmlContentConcurrentStack.TryPop(out Task<string> htmlContent))
-                {
-                    var byteArrHtmlContent = Encoding.UTF8.GetBytes(htmlContent.Result);
-
-                    _rmqPublisher.Publish(byteArrHtmlContent, _exchangeName, _routingKeys);
-                }
+                _logger.LogError($"@Url: {url} is not valid");
+                return;
             }
+
+            var data = await _dataRetriever.RetrieveStringAsync(url);
+
+            var byteArrHtmlContent = Encoding.UTF8.GetBytes(data);
+
+            _rmqPublisher.Publish(byteArrHtmlContent, _exchangeName, _routingKeys);
         }
     }
 }

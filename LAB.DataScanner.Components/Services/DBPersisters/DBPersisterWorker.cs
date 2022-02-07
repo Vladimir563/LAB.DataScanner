@@ -6,14 +6,18 @@ using System.Data.SqlClient;
 using LAB.DataScanner.Components.Services.MessageBroker.Interfaces;
 using RabbitMQ.Client.Events;
 using System.Text;
+using LAB.DataScanner.Components.Interfaces.Persisters;
+using Microsoft.Extensions.Logging;
 
 namespace LAB.DataScanner.HtmlToJsonConverter
 {
-    public class DBPersisterWorker
+    public class DBPersisterWorker : IPersisterWorker
     {
         private readonly IConfigurationRoot _configuration;
 
         private readonly IRmqConsumer _rmqConsumer;
+
+        private readonly ILogger<DBPersisterWorker> _logger;
 
         private readonly string _connectionString;
 
@@ -25,11 +29,13 @@ namespace LAB.DataScanner.HtmlToJsonConverter
 
         private readonly string _colums;
 
-        public DBPersisterWorker(IConfigurationRoot configuration, IRmqConsumer consumer)
+        public DBPersisterWorker(IConfigurationRoot configuration, IRmqConsumer consumer, ILogger<DBPersisterWorker> logger)
         {
              _configuration = configuration;
 
             _rmqConsumer = consumer;
+
+            _logger = logger;
 
             _connectionString = _configuration.GetSection("DBTableCreationSettings:SqlConnectionString").Value;
 
@@ -44,6 +50,8 @@ namespace LAB.DataScanner.HtmlToJsonConverter
 
         public void Start() 
         {
+            _logger.LogInformation("DBPersisterWorker.Start() has been executed.");
+
             _rmqConsumer.StartListening(OnReceive);
         }
 
@@ -78,8 +86,9 @@ namespace LAB.DataScanner.HtmlToJsonConverter
                             BEGIN
 	                            IF OBJECT_ID(N'{_dbo}.{_schema}.{_tableName}', N'U') IS NULL 
 	                            BEGIN
+                                    if not exists (select * from sysobjects where name='{_tableName}' and xtype='U')                                   
 	                                CREATE TABLE {_dbo}.{_schema}.{_tableName} 
-                                    ({_colums})
+                                    ({_colums})               
 	                            END;
                                 
                                 INSERT INTO {_dbo}.{_schema}.{_tableName} ({columsNamesString})
@@ -119,6 +128,8 @@ namespace LAB.DataScanner.HtmlToJsonConverter
 
         public void JsonToTableProcedureExecute(string json) 
         {
+            if (json.Equals("")) return;
+
             var procedure = $@"
                                 DECLARE @json NVARCHAR(MAX)
                                 SET @json = {json}
@@ -138,8 +149,7 @@ namespace LAB.DataScanner.HtmlToJsonConverter
             }
             catch (Exception e)
             {
-                //logging
-                Console.WriteLine(e.Message);
+                _logger.LogError(e.Message);
             }
 
             connection.Close();

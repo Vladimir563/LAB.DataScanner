@@ -1,11 +1,19 @@
-﻿using System;
-using System.Diagnostics;
+﻿using LAB.DataScanner.Components.Interfaces.Downloaders;
+using Microsoft.Extensions.Logging;
+using System;
 
 namespace LAB.DataScanner.Components.Services.Downloaders
 {
-    public class UrlsValidator
+    public class UrlsValidator : IUrlsValidator
     {
-        public bool UrlIsValid(string uriString)
+        private readonly ILogger<UrlsValidator> _logger;
+
+        public UrlsValidator(ILogger<UrlsValidator> logger)
+        {
+            _logger = logger;
+        }
+
+        public bool IsUrlValid(string uriString)
         {
             try
             {
@@ -14,8 +22,7 @@ namespace LAB.DataScanner.Components.Services.Downloaders
             }
             catch (InvalidOperationException e)
             {
-                //logging exception
-                Debug.Print(e.Message);
+                _logger.LogError(e.Message);
                 return false;
             }
         }

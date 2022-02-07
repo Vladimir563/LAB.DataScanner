@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace LAB.DataScanner.Components.Services.MessageBroker
 {
@@ -59,6 +60,8 @@ namespace LAB.DataScanner.Components.Services.MessageBroker
 
             return this;
         }
+
+        public abstract RmqBaseBuilder<T> UsingLogger(ILogger<RmqBaseBuilder<T>> logger);
 
         public abstract T Build();
     }

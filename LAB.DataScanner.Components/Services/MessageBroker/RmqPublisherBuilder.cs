@@ -1,5 +1,6 @@
 ﻿using LAB.DataScanner.Components.Services.MessageBroker.Interfaces;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Exceptions;
 using System;
@@ -11,6 +12,8 @@ namespace LAB.DataScanner.Components.Services.MessageBroker
         private IModel _channel;
 
         private IConnection _connection;
+
+        private ILogger<RmqBaseBuilder<IRmqPublisher>> _logger;
 
         private string _exchange;
 
@@ -59,6 +62,8 @@ namespace LAB.DataScanner.Components.Services.MessageBroker
 
         private void PreparePublisherConnection() 
         {
+            _logger.LogInformation("PreparePublisherConnection() method has been executed.");
+
             var connectionFactory = new ConnectionFactory
             {
                 UserName = this.UserName,
@@ -72,9 +77,9 @@ namespace LAB.DataScanner.Components.Services.MessageBroker
             {
                 _connection = connectionFactory.CreateConnection();
             }
-            catch (BrokerUnreachableException)
+            catch (BrokerUnreachableException e)
             {
-                throw new NullReferenceException("Connection to rabbitmq server failed.");
+                _logger?.LogError($"RmqPublisherBuilder: Connection to rabbitmq server has been failed. [{e.Message}]");
             }
         }
 
@@ -92,6 +97,13 @@ namespace LAB.DataScanner.Components.Services.MessageBroker
             _channel.ExchangeDeclare(_exchange, "topic");
 
             return new RmqPublisher(_channel, _exchange, _routingKey);
+        }
+
+        public override RmqBaseBuilder<IRmqPublisher> UsingLogger(ILogger<RmqBaseBuilder<IRmqPublisher>> logger)
+        {
+            _logger = logger;
+
+            return this;
         }
     }
 }

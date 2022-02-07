@@ -10,8 +10,8 @@ using WebDriverManager.Helpers;
 using WebDriverManager.DriverConfigs.Impl;
 using OpenQA.Selenium.Chrome;
 using System.Text;
-using System.Diagnostics;
-using System.Threading;
+using OpenQA.Selenium.Support.UI;
+using Microsoft.Extensions.Logging;
 
 namespace LAB.DataScanner.Components.Services.Downloaders
 {
@@ -20,10 +20,6 @@ namespace LAB.DataScanner.Components.Services.Downloaders
         private readonly HttpClient _httpClient;
 
         private readonly IConfiguration _configuration;
-
-        private IConfigurationSection _downloadingSettingsArrsSection;
-        
-        private IConfigurationSection _applicationSection;
 
         private string[] _configDownloadingMethods;
 
@@ -35,11 +31,15 @@ namespace LAB.DataScanner.Components.Services.Downloaders
 
         private bool _isContinueWork = false;
 
-        public HttpDataRetriever(HttpClient httpClient, IConfiguration configuration)
+        private readonly ILogger<HttpDataRetriever> _logger;
+
+        public HttpDataRetriever(IConfigurationRoot configuration, ILogger<HttpDataRetriever> logger)
         {
-            _httpClient = httpClient;
+            _httpClient = new HttpClient();
 
             _configuration = configuration;
+
+            _logger = logger;
 
             CheckAllConfigParamsOnValid();
         }
@@ -67,7 +67,7 @@ namespace LAB.DataScanner.Components.Services.Downloaders
 
                     if (!response.EnsureSuccessStatusCode().StatusCode.Equals("OK"))
                     {
-                        //logging
+                        _logger.LogError($"Some issues with http request have been occured (@Status code: {response.EnsureSuccessStatusCode().StatusCode})");
                         return null;
                     }
 
@@ -85,18 +85,18 @@ namespace LAB.DataScanner.Components.Services.Downloaders
                     return await RetrieveDynamicDataAsync(url, isMethodReturnsString);
                 }
             }
-            catch (HttpRequestException)
+            catch (HttpRequestException e)
             {
-                //logging
+                _logger.LogError(e.Message);
                 return null;
             }
 
             return null;
         }
 
-        public async Task<object> RetrieveDynamicDataAsync(string url, bool isReturnStringContent)
+        private async Task<object> RetrieveDynamicDataAsync(string url, bool isReturnStringContent)
         {
-            return await Task.Run(() => 
+            return await Task.Run(() =>
             {
                 new DriverManager().SetUpDriver(new ChromeConfig(), VersionResolveStrategy.MatchingBrowser);
 
@@ -106,8 +106,8 @@ namespace LAB.DataScanner.Components.Services.Downloaders
                 options.AddUserProfilePreference("profile.managed_default_content_settings.images", 2);
 
                 //Hide the browser window
-                //options.AddArgument("headless"); 
-               
+                options.AddArgument("headless");
+
                 ChromeDriverService driverService = ChromeDriverService.CreateDefaultService();
 
                 //Close the Chrome Driver console
@@ -115,19 +115,12 @@ namespace LAB.DataScanner.Components.Services.Downloaders
 
                 ChromeDriver driver = new ChromeDriver(driverService, options);
 
+                IWait<IWebDriver> wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+
                 driver.Navigate().GoToUrl(url);
 
-                for (int i = 1; i <= 10; i++)
-                {
-                    string jsCode = "window.scrollTo({top: document.body.scrollHeight / 10 * " + i + ", behavior: \"smooth\"});";
-
-                    IJavaScriptExecutor js = driver;
-
-                    js.ExecuteScript(jsCode);
-
-                    Thread.Sleep(1000);
-                }
-
+                var isPageDownloaded = wait.Until(driver => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
+   
                 object resultContent = null;
 
                 if (isReturnStringContent) 
@@ -142,21 +135,21 @@ namespace LAB.DataScanner.Components.Services.Downloaders
             });
         }
 
-        public async Task<string> RetrieveStaticStringAsync(HttpResponseMessage response) 
+        private async Task<string> RetrieveStaticStringAsync(HttpResponseMessage response) 
         {
             return await Task.Run(() => response.Content.ReadAsStringAsync());
         }
 
-        public async Task<byte[]> RetrieveStaticByteArrayAsync(HttpResponseMessage response)
+        private async Task<byte[]> RetrieveStaticByteArrayAsync(HttpResponseMessage response)
         {
             return await Task.Run(() => response.Content.ReadAsByteArrayAsync());
         }
 
         private void CheckAllConfigParamsOnValid() 
         {
-            _downloadingSettingsArrsSection = _configuration.GetSection("HtmlDataDownloadingSettingsArrs");
+            var _downloadingSettingsArrsSection = _configuration.GetSection("HtmlDataDownloadingSettingsArrs");
 
-            _applicationSection = _configuration.GetSection("Application");
+            var _applicationSection = _configuration.GetSection("Application");
 
             //get all possible DownloadingMethods from config
             _configDownloadingMethods = JsonConvert.DeserializeObject<string[]>
@@ -170,8 +163,7 @@ namespace LAB.DataScanner.Components.Services.Downloaders
 
             if (_htmlDataDownloadingMethod.Equals("") || !_configDownloadingMethods.Contains(_htmlDataDownloadingMethod))
             {
-                //use logger for logging exceptions
-                Debug.Print($"HtmlDataDownloadingMethod is not valid: " +
+                _logger.LogError($"HtmlDataDownloadingMethod is not valid: " +
                     $"{_htmlDataDownloadingMethod} " +
                     $"({String.Join($", ", _configDownloadingMethods.Select(p => p.ToString()).ToArray())} " +
                     $"was expected)");
@@ -183,8 +175,7 @@ namespace LAB.DataScanner.Components.Services.Downloaders
 
             if (_webBrowser.Equals("") || !_configWebBrowsers.Contains(_webBrowser))
             {
-                //use logger for logging exceptions
-                Debug.Print($"WebBrowser name is not valid: " +
+                _logger.LogError($"WebBrowser name is not valid: " +
                     $"{String.Join($", ", _configWebBrowsers.Select(p => p.ToString()).ToArray())} " +
                     $"was expected)");
 

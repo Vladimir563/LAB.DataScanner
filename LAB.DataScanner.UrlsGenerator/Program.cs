@@ -1,6 +1,12 @@
-﻿using LAB.DataScanner.Components.Services.Generators;
+﻿using LAB.DataScanner.Components.Interfaces.Generators;
+using LAB.DataScanner.Components.Services.Generators;
 using LAB.DataScanner.Components.Services.MessageBroker;
+using LAB.DataScanner.Components.Services.MessageBroker.Interfaces;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Serilog;
+using System;
 
 namespace LAB.DataScanner.UrlsGenerator
 {
@@ -13,15 +19,33 @@ namespace LAB.DataScanner.UrlsGenerator
                         .AddJsonFile("appsettings.json")
                         .Build();
 
-            var bindingSection = configuration.GetSection("Binding");
+            var serviceProvider = BuildServiceProvider(new ServiceCollection(), configuration);
 
-            var rmqPublisher = new RmqPublisherBuilder()
-                .UsingConfigExchangeAndRoutingKey(bindingSection)
-                .UsingDefaultConnectionSetting().Build();
+            var urlsGeneratorEngine = serviceProvider.GetService<IGeneratorEngine>();
 
-            var service = new UrlsGeneratorEngine(rmqPublisher, configuration);
+            urlsGeneratorEngine.Generate();
 
-            service.Start();
+            Console.ReadKey();
+        }
+
+        private static ServiceProvider BuildServiceProvider(IServiceCollection services, IConfigurationRoot configuration)
+        {
+            return services
+                .AddLogging(builder =>
+                {
+                    var logger = new LoggerConfiguration()
+                        .ReadFrom.Configuration(configuration)
+                        .CreateLogger();
+                    builder.AddSerilog(logger);
+                })
+                .AddSingleton<IConfigurationRoot>(c => configuration)
+                .AddSingleton<IRmqPublisher>(r => new RmqPublisherBuilder()
+                    .UsingConfigExchangeAndRoutingKey(configuration.GetSection("Binding"))
+                    .UsingDefaultConnectionSetting()
+                    .UsingLogger(services.BuildServiceProvider().GetRequiredService<ILogger<RmqPublisherBuilder>>())
+                    .Build())
+                .AddSingleton<IGeneratorEngine, UrlsGeneratorEngine>()
+                .BuildServiceProvider();
         }
     }
 }

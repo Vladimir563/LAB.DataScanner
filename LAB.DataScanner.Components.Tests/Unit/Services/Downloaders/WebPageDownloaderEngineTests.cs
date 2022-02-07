@@ -1,12 +1,13 @@
-﻿using LAB.DataScanner.Components.Services.Downloaders;
+﻿using LAB.DataScanner.Components.Interfaces.Downloaders;
+using LAB.DataScanner.Components.Services.Downloaders;
 using LAB.DataScanner.Components.Services.MessageBroker;
 using LAB.DataScanner.Components.Services.MessageBroker.Interfaces;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 using NUnit.Framework;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using System.Collections.Generic;
 using System.Text;
 
 namespace LAB.DataScanner.Components.Tests.Unit.Services.Downloaders
@@ -15,35 +16,23 @@ namespace LAB.DataScanner.Components.Tests.Unit.Services.Downloaders
     {
         private BasicDeliverEventArgs _args;
 
-        private IConfigurationRoot _fakeConfig;
-
         private IModel _amqpChannelMock;
 
         private IRmqConsumer _rmqConsumerMock;
 
         private IRmqPublisher _rmqPublisherMock;
 
-        private WebPageDownloaderEngine _webPageDownloaderEngine;
+        private IDataRetriever _dataRetrieverMock;
 
-        private IDataRetriever _dataRetriever;
+        private IUrlsValidator _urlsValidatorMock;
+
+        private WebPageDownloaderEngine _webPageDownloaderEngine;
 
         [SetUp]
         public void Setup()
         {
+            //Arrange
             _args = Substitute.For<BasicDeliverEventArgs>();
-
-            var configDic = new Dictionary<string, string>
-            {
-                {"Binding:ReceiverQueue", "HtmlToJsonConverterQueue"},
-                {"Binding:ReceiverExchange", "WebPageDownloaderExchange"},
-                {"Binding:ReceiverRoutingKey", "#"},
-                {"Binding:SenderExchange", "HtmlToJsonConverterExchange"},
-                {"Binding:SenderRoutingKeys", "['#']"}
-            };
-
-            var builder = new ConfigurationBuilder().AddInMemoryCollection(configDic);
-
-            _fakeConfig = builder.Build();
 
             _amqpChannelMock = Substitute.For<IModel>();
 
@@ -52,20 +41,28 @@ namespace LAB.DataScanner.Components.Tests.Unit.Services.Downloaders
 
             _rmqPublisherMock = Substitute.For<IRmqPublisher>();
 
-            _dataRetriever = Substitute.For<IDataRetriever>();
+            _dataRetrieverMock = Substitute.For<IDataRetriever>();
+
+            _urlsValidatorMock = Substitute.For<UrlsValidator>(Substitute.For<ILogger<UrlsValidator>>());
 
             _webPageDownloaderEngine = Substitute.For<WebPageDownloaderEngine>
-            (_fakeConfig.GetSection("Binding"),
-            _dataRetriever,
+            (Substitute.For<IConfigurationRoot>(),
+            _dataRetrieverMock,
             _rmqPublisherMock,
             _rmqConsumerMock,
-            Substitute.For<UrlsValidator>());
+            _urlsValidatorMock,
+            Substitute.For<ILogger<WebPageDownloaderEngine>>());
+
+            var _validUrl = Encoding.UTF8.GetBytes("https://www.epam.com/careers/job-listings?query=1&country=Russia");
+
+            _args.Body = _validUrl;
+
         }
 
         [Test]
         public void ShouldSkipNotValidLink() 
         {
-            //Assign
+            //Arrange
             var _invalidUrl = Encoding.UTF8.GetBytes("not_valid_url");
 
             _args.Body = _invalidUrl;
@@ -74,18 +71,22 @@ namespace LAB.DataScanner.Components.Tests.Unit.Services.Downloaders
             _webPageDownloaderEngine.OnReceive(this, _args);
 
             //Assert
-            _rmqPublisherMock.DidNotReceive().Publish(new byte[] { }, "", new string[] { });
-
+            _dataRetrieverMock.DidNotReceive().RetrieveStringAsync(Arg.Any<string>());
         }
 
         [Test]
         public void ShouldHandleValidLink() 
         {
-            //Assign
-            var _validUrl = Encoding.UTF8.GetBytes("https://www.epam.com/careers/job-listings?query=1&country=Russia");
+            //Act
+            _webPageDownloaderEngine.OnReceive(this, _args);
 
-            _args.Body = _validUrl;
+            //Assert
+            _dataRetrieverMock.Received(1).RetrieveStringAsync(Arg.Any<string>());
+        }
 
+        [Test]
+        public void ShouldPublishToExchangePageAsIsOnceSucessfullDownload() 
+        {
             //Act
             _webPageDownloaderEngine.OnReceive(this, _args);
 
@@ -94,12 +95,13 @@ namespace LAB.DataScanner.Components.Tests.Unit.Services.Downloaders
         }
 
         [Test]
-        public void ShouldPublishToExchangePageAsIsOnceSucessfullDownload() 
-        { 
-        
-        }
+        public void ShouldAcknowledgeMessageOncePageDownloadingBeenComplete() 
+        {
+            //Act
+            _webPageDownloaderEngine.OnReceive(this, _args);
 
-        [Test]
-        public void ShouldAcknowledgeMessageOncePageDownloadingBeenComplete() { }
+            //Assert
+            _rmqConsumerMock.Received(0).Ack(_args);
+        }
     }
 }

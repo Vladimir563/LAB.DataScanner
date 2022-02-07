@@ -54,6 +54,5 @@ namespace LAB.DataScanner.Components.Services.MessageBroker
 
             Dispose();
         }
-
     }
 }

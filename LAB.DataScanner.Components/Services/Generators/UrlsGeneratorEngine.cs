@@ -1,5 +1,7 @@
-﻿using LAB.DataScanner.Components.Services.MessageBroker.Interfaces;
+﻿using LAB.DataScanner.Components.Interfaces.Generators;
+using LAB.DataScanner.Components.Services.MessageBroker.Interfaces;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,31 +10,37 @@ using System.Text.RegularExpressions;
 
 namespace LAB.DataScanner.Components.Services.Generators
 {
-    public class UrlsGeneratorEngine
+    public class UrlsGeneratorEngine : IGeneratorEngine
     {
         private readonly IRmqPublisher _rmqPublisher;
 
-        private readonly IConfigurationRoot _urlsGeneratorSettings;
+        private readonly IConfigurationRoot _configuration;
 
-        public UrlsGeneratorEngine(IRmqPublisher rmqPublisher, IConfigurationRoot urlsGeneratorSettings)
+        private readonly ILogger<IGeneratorEngine> _logger;
+
+        public UrlsGeneratorEngine(IRmqPublisher rmqPublisher, IConfigurationRoot configuration, ILogger<IGeneratorEngine> logger)
         {
             _rmqPublisher = rmqPublisher;
 
-            _urlsGeneratorSettings = urlsGeneratorSettings;
+            _configuration = configuration;
+
+            _logger = logger;
         }
 
-        public void Start() 
+        public void Generate() 
         {
-            var templateUrl = _urlsGeneratorSettings.GetSection("Application:UrlTemplate").Value ?? "";
+            _logger.LogInformation("UrlsGeneratorEngine.Generate() method has been executed.");
 
-            var rangeOptions = JsonConvert.DeserializeObject<string[]>(_urlsGeneratorSettings
+            var templateUrl = _configuration.GetSection("Application:UrlTemplate").Value ?? "";
+
+            var rangeOptions = JsonConvert.DeserializeObject<string[]>(_configuration
                 .GetSection("Application:Sequences").Value)
                 .Select(s => s.Split("..")).Select(s => s.Select(a => int.Parse(a))).ToList();
             
-            var exchangeName = _urlsGeneratorSettings
+            var exchangeName = _configuration
                 .GetSection("Binding:SenderExchange").Value ?? "";
 
-            var routingKeys = JsonConvert.DeserializeObject<string[]>(_urlsGeneratorSettings
+            var routingKeys = JsonConvert.DeserializeObject<string[]>(_configuration
                 .GetSection("Binding:SenderRoutingKeys").Value ?? "");
 
             var urlsList = BuildUrlsList(templateUrl, rangeOptions);
@@ -46,7 +54,7 @@ namespace LAB.DataScanner.Components.Services.Generators
 
             if (rangeOptions.Count == 0 || rangeOptions is null) 
             {
-                //logging exception
+                _logger.LogError("Urls sequences is not set");
                 return urlsList;
             }
 
