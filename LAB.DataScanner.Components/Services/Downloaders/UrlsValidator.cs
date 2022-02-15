@@ -13,6 +13,7 @@ namespace LAB.DataScanner.Components.Services.Downloaders
             _logger = logger;
         }
 
+        //TODO: Looks like static tool
         public bool IsUrlValid(string uriString)
         {
             try
@@ -22,6 +23,7 @@ namespace LAB.DataScanner.Components.Services.Downloaders
             }
             catch (InvalidOperationException e)
             {
+                //TODO: Could you give a case when you will get an exception?
                 _logger.LogError(e.Message);
                 return false;
             }

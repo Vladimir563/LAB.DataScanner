@@ -12,6 +12,7 @@ namespace LAB.DataScanner.SimpleTableDBPersister
 {
     internal class Program
     {
+        //TODO: It must be implemented as a Worker https://habr.com/ru/company/microsoft/blog/480222/
         static void Main()
         {
             var configuration = new ConfigurationBuilder()

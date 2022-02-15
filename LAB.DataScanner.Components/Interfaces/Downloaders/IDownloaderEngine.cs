@@ -5,6 +5,7 @@ using System.Text;
 
 namespace LAB.DataScanner.Components.Interfaces.Downloaders
 {
+    //TODO: almost the same structure as in the IConverterEngine interface
     public interface IDownloaderEngine
     {
         void StartEngine();
