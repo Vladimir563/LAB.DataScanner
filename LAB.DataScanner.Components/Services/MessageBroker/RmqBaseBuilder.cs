@@ -10,7 +10,7 @@ namespace LAB.DataScanner.Components.Services.MessageBroker
         protected string Password;
 
         protected string HostName;
-
+          
         protected int Port;
 
         protected string VirtualHost;
