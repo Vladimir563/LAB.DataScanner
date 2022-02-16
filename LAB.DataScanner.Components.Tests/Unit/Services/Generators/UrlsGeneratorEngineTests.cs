@@ -26,6 +26,7 @@ namespace LAB.DataScanner.Components.Tests.Unit.Services.Generators
         [Test]
         public void ShouldGenerateAndPublishUrlsBasedOnConfiguration()
         {
+            //TODO: use the config for the project
             //Arrange
             var configDic = new Dictionary<string, string>
             {

@@ -52,6 +52,7 @@ namespace LAB.DataScanner.Components.Services.Generators
         {
             List<string> urlsList = new List<string>();
 
+            //TODO: If rangeOptions is null you will catch an exception
             if (rangeOptions.Count == 0 || rangeOptions is null) 
             {
                 _logger.LogError("Urls sequences is not set");
@@ -74,7 +75,7 @@ namespace LAB.DataScanner.Components.Services.Generators
 
             var crossP = urlSequences.CartesianProduct().Select(s => s.ToArray()).ToList();
 
-            for (int i = 0; i < crossP.Count(); i++)
+            for (int i = 0; i < crossP.Count; i++)
             {
                 var rangeIndex = 0;
 

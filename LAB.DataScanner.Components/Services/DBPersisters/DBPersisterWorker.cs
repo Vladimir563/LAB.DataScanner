@@ -37,6 +37,7 @@ namespace LAB.DataScanner.HtmlToJsonConverter
 
             _logger = logger;
 
+            //TODO: Using the Bind method is clearer and takes up fewer lines. Create a class DBTableCreationSettings with the props SqlConnectionString, dbo, schema, tableName, colums
             _connectionString = _configuration.GetSection("DBTableCreationSettings:SqlConnectionString").Value;
 
             _dbo = _configuration.GetSection("DBTableCreationSettings:dbo").Value;
@@ -61,12 +62,15 @@ namespace LAB.DataScanner.HtmlToJsonConverter
 
             var columsNamesArr = columsArr.Select(p => p.Trim().Split(' ')).Select(p => p[0]).ToArray();
 
+            //TODO: Why do you use string interpolation?
             var columsNamesString = $"{String.Join($", ", columsNamesArr)}";
 
             var columsForInsertArr = columsArr.Select(p => p + $" \'$.{p.Trim().Split(' ')[0]}\'");
 
+            //TODO: Why do you use string interpolation?
             var columsForInsertString = $"{String.Join($", ", columsForInsertArr)}";
 
+            //TODO: Use the parametrized queries in order to avoid injections attack. Links: https://visualstudiomagazine.com/articles/2017/07/01/parameterized-queries.aspx https://docs.microsoft.com/en-us/ef/core/querying/raw-sql 
             var create_schema = $@"IF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE name = '{_schema}')
                                 BEGIN
                                     EXEC( 'CREATE SCHEMA {_schema} AUTHORIZATION db_owner' );
@@ -103,6 +107,7 @@ namespace LAB.DataScanner.HtmlToJsonConverter
 
             using (SqlCommand cmd = new SqlCommand(create_schema, connection))
             {
+                //TODO: Why you open three times the connection?
                 connection.Open();
                 cmd.CommandType = CommandType.Text;
                 cmd.ExecuteNonQuery();

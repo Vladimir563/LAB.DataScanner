@@ -43,6 +43,7 @@ namespace LAB.DataScanner.Components.Tests.Unit.Services.Downloaders
 
             _dataRetrieverMock = Substitute.For<IDataRetriever>();
 
+            //TODO: There are not any reasons to have a class for such needs like you implemented in the UrlsValidator. Use Helpers
             _urlsValidatorMock = Substitute.For<UrlsValidator>(Substitute.For<ILogger<UrlsValidator>>());
 
             _webPageDownloaderEngine = Substitute.For<WebPageDownloaderEngine>
@@ -62,6 +63,11 @@ namespace LAB.DataScanner.Components.Tests.Unit.Services.Downloaders
         [Test]
         public void ShouldSkipNotValidLink() 
         {
+            //TODO: To my mind, the flow should be:
+            //TODO: 1. start listening for the _webPageDownloaderEngine
+            //TODO: 2. publish the message for the _webPageDownloaderEngine
+            //TODO: 3. now you can check _dataRetrieverMock.DidNotReceive().RetrieveStringAsync for instance 
+
             //Arrange
             var _invalidUrl = Encoding.UTF8.GetBytes("not_valid_url");
 
@@ -77,6 +83,7 @@ namespace LAB.DataScanner.Components.Tests.Unit.Services.Downloaders
         [Test]
         public void ShouldHandleValidLink() 
         {
+            //TODO: see the previous method
             //Act
             _webPageDownloaderEngine.OnReceive(this, _args);
 
@@ -87,6 +94,7 @@ namespace LAB.DataScanner.Components.Tests.Unit.Services.Downloaders
         [Test]
         public void ShouldPublishToExchangePageAsIsOnceSucessfullDownload() 
         {
+            //TODO: see the previous method
             //Act
             _webPageDownloaderEngine.OnReceive(this, _args);
 
@@ -97,10 +105,12 @@ namespace LAB.DataScanner.Components.Tests.Unit.Services.Downloaders
         [Test]
         public void ShouldAcknowledgeMessageOncePageDownloadingBeenComplete() 
         {
+            //TODO: see the previous method
             //Act
             _webPageDownloaderEngine.OnReceive(this, _args);
 
             //Assert
+            //TODO: Why is the parameter 0?
             _rmqConsumerMock.Received(0).Ack(_args);
         }
     }

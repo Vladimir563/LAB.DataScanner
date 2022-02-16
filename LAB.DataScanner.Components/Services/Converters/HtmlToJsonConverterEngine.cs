@@ -42,7 +42,8 @@ namespace LAB.DataScanner.Components.Services.Converters
             _rmqConsumer = rmqConsumer;
 
             _logger = logger;
-
+           
+            //TODO: Using the Bind method is clearer and takes up fewer lines. Samplle link https://thecodeblogger.com/2021/04/20/multiple-ways-to-access-configurations-in-net-applications/
             _routingKeys = JsonConvert.DeserializeObject<string[]>(_htmlToJsonConverterEngineSettings
                 .GetSection("Binding:SenderRoutingKeys").Value ?? "");
 
@@ -70,6 +71,7 @@ namespace LAB.DataScanner.Components.Services.Converters
 
         public string Convert(string htmlContent)
         {
+            //TODO: not used
             List<HtmlNodeCollection> extractedHtmlNodes = new List<HtmlNodeCollection>();
 
             var htmlDoc = new HtmlDocument();
@@ -94,6 +96,7 @@ namespace LAB.DataScanner.Components.Services.Converters
             //select parsing strategy pattern
             if (htmlFragmentStrategy.Equals("SelectNodes", StringComparison.OrdinalIgnoreCase))
             {
+                //TODO: What if the variable is null?
                 extractedHtmlNodes = GetExtractedHtmlNodeCollection(htmlDoc, htmlContent, false);
             }
             else
@@ -104,6 +107,7 @@ namespace LAB.DataScanner.Components.Services.Converters
             return HtmlToJsonParse(extractedHtmlNodes, _columsNamesArr);
         }
 
+        //TODO: What is the reason to have a public method?
         public void OnReceive(object model, BasicDeliverEventArgs ea)
         {
             var body = ea.Body.ToArray();
@@ -126,6 +130,7 @@ namespace LAB.DataScanner.Components.Services.Converters
 
         public List<HtmlNodeCollection> GetExtractedHtmlNodeCollection(HtmlDocument htmlDoc, string htmlContent, bool isSingleNodeRequire)
         {
+            //TODO: the htmlContent variable can be null
             htmlDoc.LoadHtml(htmlContent);
 
             List<HtmlNodeCollection> nodeCollectionList = new List<HtmlNodeCollection>();

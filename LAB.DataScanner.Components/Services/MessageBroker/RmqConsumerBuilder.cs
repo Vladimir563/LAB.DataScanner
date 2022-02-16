@@ -37,6 +37,7 @@ namespace LAB.DataScanner.Components.Services.MessageBroker
             return this;
         }
 
+        //TODO: why here we see the IConfigurationSection?          ????? 
         public RmqConsumerBuilder UsingConfigQueueName(IConfigurationSection bindingSection)
         {
             _queueName = bindingSection.GetSection("Binding:ReceiverQueue").Value;
@@ -85,6 +86,7 @@ namespace LAB.DataScanner.Components.Services.MessageBroker
                 _queueName = "queue_" + Guid.NewGuid();
             }
 
+            //TODO: Use the Bind (Microsoft.Extentions.Configuration.*)
             _exchange = _configuration.GetSection("Binding:ReceiverExchange").Value ?? "";
 
             _routingKey = _configuration.GetSection("Binding:ReceiverRoutingKey").Value ?? "";

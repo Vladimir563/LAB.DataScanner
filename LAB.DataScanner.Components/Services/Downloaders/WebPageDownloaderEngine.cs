@@ -24,6 +24,7 @@ namespace LAB.DataScanner.Components.Services.Downloaders
 
         private readonly string _exchangeName;
 
+        //TODO: As for me, it looks like a static methods of helper
         private readonly IUrlsValidator _urlsValidator;
 
         private readonly ILogger<WebPageDownloaderEngine> _logger;
@@ -52,11 +53,13 @@ namespace LAB.DataScanner.Components.Services.Downloaders
 
         public void StartEngine()
         {
+            //TODO: Does it suit to add try catch clause?
             _logger.LogInformation("DownloaderEngine has been started");
 
             _rmqConsumer.StartListening(OnReceive);
         }
 
+        //TODO: What is the reason to have a public method? I remember you  had a question regarding the unit tests. Please remind me during the meeting.
         public void OnReceive(object model, BasicDeliverEventArgs ea) 
         {
             var body = ea.Body.ToArray();

@@ -39,6 +39,7 @@ namespace LAB.DataScanner.Components.Services.MessageBroker
 
         public void StartListening(EventHandler<BasicDeliverEventArgs> onReceiveHandler)
         {
+            //TODO: where is a logger
             Console.WriteLine(" [*] Waiting for messages. To exit press CTRL+C");
 
             _consumer.Received += onReceiveHandler;

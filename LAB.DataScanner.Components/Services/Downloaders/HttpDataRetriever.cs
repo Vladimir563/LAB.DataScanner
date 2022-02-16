@@ -119,6 +119,7 @@ namespace LAB.DataScanner.Components.Services.Downloaders
 
                 driver.Navigate().GoToUrl(url);
 
+                //TODO: not used
                 var isPageDownloaded = wait.Until(driver => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
    
                 object resultContent = null;
@@ -145,8 +146,10 @@ namespace LAB.DataScanner.Components.Services.Downloaders
             return await Task.Run(() => response.Content.ReadAsByteArrayAsync());
         }
 
+        //TODO: To valid config please use the common method
         private void CheckAllConfigParamsOnValid() 
         {
+            //TODO: Using the Bind method is clearer and takes up fewer lines.
             var _downloadingSettingsArrsSection = _configuration.GetSection("HtmlDataDownloadingSettingsArrs");
 
             var _applicationSection = _configuration.GetSection("Application");
@@ -168,6 +171,7 @@ namespace LAB.DataScanner.Components.Services.Downloaders
                     $"({String.Join($", ", _configDownloadingMethods.Select(p => p.ToString()).ToArray())} " +
                     $"was expected)");
 
+                //TODO: In case your configuration is critical for the application you must throw an exception
                 _isContinueWork = false;
             }
 
