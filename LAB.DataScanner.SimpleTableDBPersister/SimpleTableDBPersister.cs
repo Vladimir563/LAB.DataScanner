@@ -7,16 +7,15 @@ using Microsoft.ServiceFabric.Services.Runtime;
 using Serilog;
 using Serilog.Core.Enrichers;
 
-namespace LAB.DataScanner.WebPageDownloader
+namespace LAB.DataScanner.SimpleTableDBPersister
 {
-
-    internal sealed class WebPageDownloader : StatelessService
+    internal sealed class SimpleTableDBPersister : StatelessService
     {
         private readonly Microsoft.Extensions.Logging.ILogger _logger;
 
         private readonly ServiceProvider _serviceProvider;
 
-        public WebPageDownloader(StatelessServiceContext context, Serilog.ILogger serilog, ServiceProvider serviceProvider)
+        public SimpleTableDBPersister(StatelessServiceContext context, Serilog.ILogger serilog, ServiceProvider serviceProvider)
             : base(context)
         {
             PropertyEnricher[] properties = new PropertyEnricher[]
@@ -29,7 +28,7 @@ namespace LAB.DataScanner.WebPageDownloader
 
             serilog.ForContext(properties);
 
-            _logger = new LoggerFactory().AddSerilog(serilog.ForContext(properties)).CreateLogger<WebPageDownloader>();
+            _logger = new LoggerFactory().AddSerilog(serilog.ForContext(properties)).CreateLogger<SimpleTableDBPersister>();
 
             _serviceProvider = serviceProvider;
         }
@@ -53,11 +52,11 @@ namespace LAB.DataScanner.WebPageDownloader
             {
                 try
                 {
-                    _logger.LogInformation("The \"WebPageDownloaderEngine\" service will be started soon...");
+                    _logger.LogInformation("The \"SimpleTableDBPersister\" service will be started soon...");
 
-                    var webPageDownloaderEngine = _serviceProvider.GetService<IEngine>();
+                    var simpleTableDBPersister = _serviceProvider.GetService<IEngine>();
 
-                    webPageDownloaderEngine?.Start();
+                    simpleTableDBPersister?.Start();
                 }
                 catch (Exception e)
                 {

@@ -36,6 +36,8 @@
     <Content Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\LAB.DataScanner.HtmlToJsonConverter\LAB.DataScanner.HtmlToJsonConverter.csproj" />
+    <ProjectReference Include="..\LAB.DataScanner.SimpleTableDBPersister\LAB.DataScanner.SimpleTableDBPersister.csproj" />
     <ProjectReference Include="..\LAB.DataScanner.WebPageDownloader\LAB.DataScanner.WebPageDownloader.csproj" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />

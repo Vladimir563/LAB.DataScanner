@@ -1,4 +1,5 @@
 using System.Fabric;
+using LAB.DataScanner.Components;
 using LAB.DataScanner.Components.Interfaces.Engines;
 using LAB.DataScanner.Components.Services.Downloaders;
 using LAB.DataScanner.Components.Services.MessageBroker;
@@ -9,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.ServiceFabric.Services.Runtime;
 using Serilog;
+using Serilog.Sinks.Elasticsearch;
 
 namespace LAB.DataScanner.WebPageDownloader
 {
@@ -18,17 +20,8 @@ namespace LAB.DataScanner.WebPageDownloader
         {
             try
             {
-                try
-                {
-                    ServiceRuntime.RegisterServiceAsync("LAB.DataScanner.WebPageDownloaderType", context => new WebPageDownloader
-                        (context, GetLogger(context), GetServiceProvider(context))).GetAwaiter().GetResult();
-
-                    Thread.Sleep(Timeout.Infinite);
-                }
-                catch (Exception e)
-                {
-                    throw;
-                }
+                ServiceRuntime.RegisterServiceAsync("LAB.DataScanner.WebPageDownloaderType", context => new WebPageDownloader
+                    (context, GetLogger(), GetServiceProvider(context))).GetAwaiter().GetResult();
 
                 Thread.Sleep(Timeout.Infinite);
             }
@@ -39,17 +32,17 @@ namespace LAB.DataScanner.WebPageDownloader
             }
         }
 
-        private static Serilog.ILogger GetLogger(StatelessServiceContext context)
+        private static Serilog.ILogger GetLogger()
         {
             var logger = new LoggerConfiguration()
                 .WriteTo.Debug()
-                //.WriteTo.Elasticsearch(new ElasticsearchSinkOptions(new Uri("http://localhost:9200"))
-                //{
-                //    AutoRegisterTemplate = true,
-                //    AutoRegisterTemplateVersion = AutoRegisterTemplateVersion.ESv6,
-                //    IndexFormat = "urls_generator_service",
-                //    MinimumLogEventLevel = Serilog.Events.LogEventLevel.Verbose
-                //})
+                .WriteTo.Elasticsearch(new ElasticsearchSinkOptions(new Uri("http://localhost:9200"))
+                {
+                    AutoRegisterTemplate = true,
+                    AutoRegisterTemplateVersion = AutoRegisterTemplateVersion.ESv6,
+                    IndexFormat = "web_page_downloader_service",
+                    MinimumLogEventLevel = Serilog.Events.LogEventLevel.Verbose
+                })
                 .CreateLogger();
 
             return logger;

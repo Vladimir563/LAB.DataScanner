@@ -1,24 +1,60 @@
-﻿using Microsoft.Extensions.Configuration;
-using System;
-using LAB.DataScanner.Components.Services.MessageBroker;
-using Microsoft.Extensions.DependencyInjection;
-using LAB.DataScanner.Components.Interfaces.Converters;
-using LAB.DataScanner.Components.Services.MessageBroker.Interfaces;
-using LAB.DataScanner.Components.Services.Converters;
-using LAB.DataScanner.Components.Settings;
-using LAB.DataScanner.Components.Services.Validators;
+using System.Fabric;
+using LAB.DataScanner.Components;
 using LAB.DataScanner.Components.Interfaces.Engines;
+using LAB.DataScanner.Components.Services.Converters;
+using LAB.DataScanner.Components.Services.MessageBroker;
+using LAB.DataScanner.Components.Services.MessageBroker.Interfaces;
+using LAB.DataScanner.Components.Services.Validators;
+using LAB.DataScanner.Components.Settings;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.ServiceFabric.Services.Runtime;
+using Serilog;
+using Serilog.Sinks.Elasticsearch;
 
 namespace LAB.DataScanner.HtmlToJsonConverter
 {
-    internal class Program
+    internal static class Program
     {
-        static void Main()
+        private static void Main()
         {
+            try
+            {
+                ServiceRuntime.RegisterServiceAsync("LAB.DataScanner.HtmlToJsonConverterType", context => new HtmlToJsonConverter
+                    (context, GetLogger(), GetServiceProvider(context))).GetAwaiter().GetResult();
+
+                Thread.Sleep(Timeout.Infinite);
+            }
+            catch (Exception e)
+            {
+                ServiceEventSource.Current.ServiceHostInitializationFailed(e.ToString());
+                throw;
+            }
+        }
+
+        private static Serilog.ILogger GetLogger()
+        {
+            var logger = new LoggerConfiguration()
+                .WriteTo.Debug()
+                .WriteTo.Elasticsearch(new ElasticsearchSinkOptions(new Uri("http://localhost:9200"))
+                {
+                    AutoRegisterTemplate = true,
+                    AutoRegisterTemplateVersion = AutoRegisterTemplateVersion.ESv6,
+                    IndexFormat = "html_to_json_converter_service",
+                    MinimumLogEventLevel = Serilog.Events.LogEventLevel.Verbose
+                })
+                .CreateLogger();
+
+            return logger;
+        }
+
+        private static ServiceProvider GetServiceProvider(StatelessServiceContext context)
+        {
+
             #region Configuration, settings binding and validation
+
             var configuration = new ConfigurationBuilder()
-                .SetBasePath(System.IO.Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json")
+                .AddJsonFile(context)
                 .Build();
 
             var converterSettings = new HtmlToJsonConverterSettings();
@@ -27,7 +63,7 @@ namespace LAB.DataScanner.HtmlToJsonConverter
 
             configuration.GetSection("ConnectionSettings").Bind(converterSettings);
 
-            configuration.GetSection("HtmlDataDownloadingSettingsArrs").Bind(converterSettings); 
+            configuration.GetSection("HtmlDataDownloadingSettingsArrs").Bind(converterSettings);
 
             configuration.GetSection("DBTableCreationSettings").Bind(converterSettings);
 
@@ -56,20 +92,14 @@ namespace LAB.DataScanner.HtmlToJsonConverter
                 .UsingConfigConnectionSettings(converterSettings)
                 .Build();
 
-            var serviceProvider = new ServiceCollection()
-                .AddSingleton<IRmqPublisher>(rqmPublisher)
-                .AddSingleton<IRmqConsumer>(rmqConsumer)
-                .AddSingleton<HtmlToJsonConverterSettings>(converterSettings)
-                .AddSingleton<RmqPublisherSettings>(rmqPublisherSettings)
-                .AddSingleton<RmqConsumerSettings>(rqmConsumerSettings)
-                .AddSingleton<IEngine, HtmlToJsonConverterEngine>()
-                .BuildServiceProvider();
-
-            var htmlToJsonConverter = serviceProvider.GetService<IEngine>();
-
-            htmlToJsonConverter.Start();
-
-            Console.ReadKey();
+            return new ServiceCollection()
+                 .AddSingleton<IRmqPublisher>(rqmPublisher)
+                 .AddSingleton<IRmqConsumer>(rmqConsumer)
+                 .AddSingleton<HtmlToJsonConverterSettings>(converterSettings)
+                 .AddSingleton<RmqPublisherSettings>(rmqPublisherSettings)
+                 .AddSingleton<RmqConsumerSettings>(rqmConsumerSettings)
+                 .AddSingleton<IEngine, HtmlToJsonConverterEngine>()
+                 .BuildServiceProvider();
         }
     }
 }

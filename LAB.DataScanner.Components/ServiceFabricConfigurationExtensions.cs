@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using System.Fabric;
 
-namespace LAB.DataScanner.WebPageDownloader
+namespace LAB.DataScanner.Components
 {
     public static class ServiceFabricConfigurationExtensions
     {
