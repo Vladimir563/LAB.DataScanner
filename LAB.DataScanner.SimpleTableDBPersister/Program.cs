@@ -1,54 +1,57 @@
-﻿using LAB.DataScanner.Components.Interfaces.Persisters;
+﻿using LAB.DataScanner.Components.Interfaces.Engines;
 using LAB.DataScanner.Components.Services.MessageBroker;
 using LAB.DataScanner.Components.Services.MessageBroker.Interfaces;
+using LAB.DataScanner.Components.Services.Validators;
+using LAB.DataScanner.Components.Settings;
 using LAB.DataScanner.HtmlToJsonConverter;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Serilog;
 using System;
 
 namespace LAB.DataScanner.SimpleTableDBPersister
 {
     internal class Program
     {
-        //TODO: It must be implemented as a Worker https://habr.com/ru/company/microsoft/blog/480222/
         static void Main()
         {
+            #region Configuration, settings binding and validation
             var configuration = new ConfigurationBuilder()
                 .SetBasePath(System.IO.Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json")
                 .Build();
 
-            var serviceProvider = BuildServiceProvider(new ServiceCollection(), configuration);
+            var dbPersisterSettings = new SimpleTableDBPersisterSettings();
 
-            var dbWorker = serviceProvider.GetService<IPersisterWorker>();
+            configuration.GetSection("ConnectionSettings").Bind(dbPersisterSettings);
 
-            dbWorker.StartConfiguring();
+            configuration.GetSection("DBTableCreationSettings").Bind(dbPersisterSettings);
 
-            dbWorker.Start();
+            SettingsValidator.Validate(dbPersisterSettings);
+
+            var rqmConsumerSettings = new RmqConsumerSettings();
+
+            configuration.GetSection("ConsumerSettings").Bind(rqmConsumerSettings);
+
+            SettingsValidator.Validate(rqmConsumerSettings);
+            #endregion
+
+            var rmqConsumer = new RmqConsumerBuilder(rqmConsumerSettings)
+                .UsingConfigQueueName(rqmConsumerSettings)
+                .UsingConfigConnectionSettings(dbPersisterSettings)
+                .Build();
+
+            var serviceProvider = new ServiceCollection()
+                .AddSingleton<IRmqConsumer>(rmqConsumer)
+                .AddSingleton<SimpleTableDBPersisterSettings>(dbPersisterSettings)
+                .AddSingleton<RmqConsumerSettings>(rqmConsumerSettings)
+                .AddSingleton<IEngine, DBPersisterEngine>()
+                .BuildServiceProvider();
+
+            var dbPersisterEngine = serviceProvider.GetService<IEngine>();
+
+            dbPersisterEngine.Start();
 
             Console.ReadKey();
-        }
-
-        private static ServiceProvider BuildServiceProvider(IServiceCollection services, IConfigurationRoot configuration)
-        {
-            return services
-                .AddLogging(builder =>
-                {
-                    var logger = new LoggerConfiguration()
-                        .ReadFrom.Configuration(configuration)
-                        .CreateLogger();
-                    builder.AddSerilog(logger);
-                })
-                .AddSingleton<IConfigurationRoot>(c => configuration)
-                .AddSingleton<IRmqConsumer>(c => new RmqConsumerBuilder(configuration)
-                    .UsingConfigQueueName(configuration.GetSection("Binding"))
-                    .UsingConfigConnectionSettings(configuration.GetSection("ConnectionSettings"))
-                    .UsingLogger(services.BuildServiceProvider().GetRequiredService<ILogger<RmqConsumerBuilder>>())
-                    .Build())
-                .AddSingleton<IPersisterWorker, DBPersisterWorker>()
-                .BuildServiceProvider();
         }
     }
 }

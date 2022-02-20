@@ -1,10 +1,8 @@
 ﻿using LAB.DataScanner.Components.Interfaces.Downloaders;
 using LAB.DataScanner.Components.Services.MessageBroker.Interfaces;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
+using LAB.DataScanner.Components.Settings;
 using RabbitMQ.Client.Events;
-using System.Collections.Concurrent;
+using System;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -12,7 +10,7 @@ namespace LAB.DataScanner.Components.Services.Downloaders
 {
     public class WebPageDownloaderEngine : IDownloaderEngine
     {
-        private readonly IConfigurationRoot _configuration;
+        private readonly RmqPublisherSettings _publisherSettings;
 
         private readonly IDataRetriever _dataRetriever;
 
@@ -20,47 +18,25 @@ namespace LAB.DataScanner.Components.Services.Downloaders
 
         private readonly IRmqConsumer _rmqConsumer;
 
-        private readonly string[] _routingKeys;
-
-        private readonly string _exchangeName;
-
-        //TODO: As for me, it looks like a static methods of helper
-        private readonly IUrlsValidator _urlsValidator;
-
-        private readonly ILogger<WebPageDownloaderEngine> _logger;
-
-        public WebPageDownloaderEngine(IConfigurationRoot configuration,
+        public WebPageDownloaderEngine(RmqPublisherSettings publisherSettings,
             IDataRetriever dataRetriever, IRmqPublisher rmqPublisher, 
-            IRmqConsumer rmqConsumer, IUrlsValidator urlsValidator, ILogger<WebPageDownloaderEngine> logger)
+            IRmqConsumer rmqConsumer)
         {
-            _configuration = configuration;
-
             _dataRetriever = dataRetriever;
 
             _rmqPublisher = rmqPublisher;
 
             _rmqConsumer = rmqConsumer;
 
-            _urlsValidator = urlsValidator;
-
-            _logger = logger;
-
-            _routingKeys = JsonConvert.DeserializeObject<string[]>(_configuration
-                .GetSection("Binding:SenderRoutingKeys").Value ?? "");
-
-            _exchangeName = _configuration.GetSection("Binding:SenderExchange").Value ?? "";
+            _publisherSettings = publisherSettings;
         }
 
-        public void StartEngine()
+        public void Start()
         {
-            //TODO: Does it suit to add try catch clause?
-            _logger.LogInformation("DownloaderEngine has been started");
-
             _rmqConsumer.StartListening(OnReceive);
         }
 
-        //TODO: What is the reason to have a public method? I remember you  had a question regarding the unit tests. Please remind me during the meeting.
-        public void OnReceive(object model, BasicDeliverEventArgs ea) 
+        private void OnReceive(object model, BasicDeliverEventArgs ea) 
         {
             var body = ea.Body.ToArray();
 
@@ -76,17 +52,21 @@ namespace LAB.DataScanner.Components.Services.Downloaders
 
         private async Task ProcessUrlAsync(string url)
         {
-            if (!_urlsValidator.IsUrlValid(url))
+            if (!IsUrlValid(url))
             {
-                _logger.LogError($"@Url: {url} is not valid");
-                return;
+                throw new ArgumentException($"@Url: {url} is not valid");
             }
 
             var data = await _dataRetriever.RetrieveStringAsync(url);
 
+            if (data is null || data.Equals(string.Empty)) throw new ArgumentNullException($"The content from url ({url}) was null");
+
             var byteArrHtmlContent = Encoding.UTF8.GetBytes(data);
 
-            _rmqPublisher.Publish(byteArrHtmlContent, _exchangeName, _routingKeys);
+            _rmqPublisher.Publish(byteArrHtmlContent, _publisherSettings.SenderExchange, _publisherSettings.SenderRoutingKeys);
         }
+
+        private bool IsUrlValid(string uriString) => Uri.TryCreate(uriString, UriKind.RelativeOrAbsolute, out Uri uriResult)
+                && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
     }
 }

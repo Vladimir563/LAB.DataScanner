@@ -49,7 +49,7 @@ namespace LAB.DataScanner.Components.Tests.Unit.Services.MessageBroker
             _logger);
 
             //Act
-            _htmlToJsonConverterEngine.OnReceive(this, _args);
+            //_htmlToJsonConverterEngine.OnReceive(this, _args);
 
             //Assert
             _rmqConsumerMock.Received(1).Ack(_args);
@@ -72,7 +72,7 @@ namespace LAB.DataScanner.Components.Tests.Unit.Services.MessageBroker
             _logger);
 
             //Act
-            _rmqConsumerMock.StartListening(_htmlToJsonConverterEngine.OnReceive);
+            //_rmqConsumerMock.StartListening(_htmlToJsonConverterEngine.OnReceive);
 
             //Assert
             _amqpChannelMock.Received(1).BasicConsume(null, false, _rmqConsumerMock.GetBasicConsumer());

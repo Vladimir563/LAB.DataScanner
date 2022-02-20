@@ -1,11 +1,11 @@
-﻿using LAB.DataScanner.Components.Interfaces.Downloaders;
+﻿using LAB.DataScanner.Components.Interfaces.Engines;
 using LAB.DataScanner.Components.Services.Downloaders;
 using LAB.DataScanner.Components.Services.MessageBroker;
 using LAB.DataScanner.Components.Services.MessageBroker.Interfaces;
+using LAB.DataScanner.Components.Services.Validators;
+using LAB.DataScanner.Components.Settings;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Serilog;
 using System;
 
 namespace LAB.DataScanner.WebPageDownloader
@@ -14,46 +14,60 @@ namespace LAB.DataScanner.WebPageDownloader
     {
         static void Main()
         {
+            #region Configuration, settings binding and validation
             var configuration = new ConfigurationBuilder()
-            .SetBasePath(System.IO.Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json")
-            .Build();
+                .SetBasePath(System.IO.Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json")
+                .Build();
 
-            var serviceProvider = BuildServiceProvider(new ServiceCollection(), configuration);
+            var downloaderSettings = new WebPageDownloaderSettings();
 
-            var webPageDownloaderEngine = serviceProvider.GetService<IDownloaderEngine>();
+            configuration.GetSection("Application").Bind(downloaderSettings);
 
-            webPageDownloaderEngine.StartEngine();
+            configuration.GetSection("ConnectionSettings").Bind(downloaderSettings);
+
+            configuration.GetSection("HtmlDataDownloadingSettingsArrs").Bind(downloaderSettings);
+
+            SettingsValidator.Validate(downloaderSettings);
+
+            var rmqPublisherSettings = new RmqPublisherSettings();
+
+            configuration.GetSection("PublisherSettings").Bind(rmqPublisherSettings);
+
+            SettingsValidator.Validate(rmqPublisherSettings);
+
+            var rqmConsumerSettings = new RmqConsumerSettings();
+
+            configuration.GetSection("ConsumerSettings").Bind(rqmConsumerSettings);
+
+            SettingsValidator.Validate(rqmConsumerSettings);
+            #endregion
+
+            var rqmPublisher = new RmqPublisherBuilder()
+                .UsingConfigExchangeAndRoutingKey(rmqPublisherSettings)
+                .UsingDefaultConnectionSetting()
+                .Build();
+
+            var rmqConsumer = new RmqConsumerBuilder(rqmConsumerSettings)
+                .UsingConfigQueueName(rqmConsumerSettings)
+                .UsingConfigConnectionSettings(downloaderSettings)
+                .Build();
+
+            var serviceProvider = new ServiceCollection()
+                .AddSingleton<IRmqPublisher>(rqmPublisher)
+                .AddSingleton<IRmqConsumer>(rmqConsumer)
+                .AddSingleton<RmqPublisherSettings>(rmqPublisherSettings)
+                .AddSingleton<RmqConsumerSettings>(rqmConsumerSettings)
+                .AddSingleton<WebPageDownloaderSettings>(downloaderSettings)
+                .AddSingleton<IDataRetriever, HttpDataRetriever>()
+                .AddSingleton<IEngine, WebPageDownloaderEngine>()
+                .BuildServiceProvider();
+
+            var webPageDownloaderEngine = serviceProvider.GetService<IEngine>();
+
+            webPageDownloaderEngine.Start();
 
             Console.ReadKey();
-        }
-
-
-        private static ServiceProvider BuildServiceProvider(IServiceCollection services, IConfigurationRoot configuration)
-        {
-            return services
-                .AddLogging(builder =>
-                {
-                var logger = new LoggerConfiguration()
-                    .ReadFrom.Configuration(configuration)
-                    .CreateLogger();
-                    builder.AddSerilog(logger);
-                })
-                .AddSingleton<IConfigurationRoot>(c => configuration)
-                .AddSingleton<IRmqPublisher>(r => new RmqPublisherBuilder()
-                    .UsingConfigExchangeAndRoutingKey(configuration.GetSection("Binding"))
-                    .UsingDefaultConnectionSetting()
-                    .UsingLogger(services.BuildServiceProvider().GetRequiredService<ILogger<RmqPublisherBuilder>>())
-                    .Build())
-                .AddSingleton<IRmqConsumer>(c => new RmqConsumerBuilder(configuration)
-                    .UsingConfigQueueName(configuration.GetSection("Binding"))
-                    .UsingConfigConnectionSettings(configuration.GetSection("ConnectionSettings"))
-                    .UsingLogger(services.BuildServiceProvider().GetRequiredService<ILogger<RmqConsumerBuilder>>())
-                    .Build())
-                .AddSingleton<IDataRetriever, HttpDataRetriever>()
-                .AddSingleton<IUrlsValidator, UrlsValidator>()
-                .AddSingleton<IDownloaderEngine, WebPageDownloaderEngine>()
-                .BuildServiceProvider();
         }
     }
 }

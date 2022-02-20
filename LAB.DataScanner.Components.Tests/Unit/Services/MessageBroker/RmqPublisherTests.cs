@@ -51,7 +51,7 @@ namespace LAB.DataScanner.Components.Tests.Unit.Services.MessageBroker
         public void ShouldPublishMessageToCertainExchangeAndRoutingKey() 
         {
             //Act
-            publisher = publisherBuilder.UsingExchangeAndRoutingKey("","").Build();
+            publisher = publisherBuilder.UsingExchangeAndRoutingKey("","", "").Build();
 
             publisher.Publish(message);
 

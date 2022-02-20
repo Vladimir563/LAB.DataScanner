@@ -1,9 +1,6 @@
-﻿using Microsoft.Extensions.Configuration;
-using System;
+﻿using System;
 using System.Net.Http;
 using System.Threading.Tasks;
-using System.Linq;
-using Newtonsoft.Json;
 using OpenQA.Selenium;
 using WebDriverManager;
 using WebDriverManager.Helpers;
@@ -11,37 +8,21 @@ using WebDriverManager.DriverConfigs.Impl;
 using OpenQA.Selenium.Chrome;
 using System.Text;
 using OpenQA.Selenium.Support.UI;
-using Microsoft.Extensions.Logging;
+using LAB.DataScanner.Components.Settings;
 
 namespace LAB.DataScanner.Components.Services.Downloaders
 {
     public class HttpDataRetriever : IDataRetriever, IDisposable
     {
+        private readonly WebPageDownloaderSettings _downloaderSettings;
+
         private readonly HttpClient _httpClient;
 
-        private readonly IConfiguration _configuration;
-
-        private string[] _configDownloadingMethods;
-
-        private string[] _configWebBrowsers;
-
-        private string _htmlDataDownloadingMethod;
-
-        private string _webBrowser;
-
-        private bool _isContinueWork = false;
-
-        private readonly ILogger<HttpDataRetriever> _logger;
-
-        public HttpDataRetriever(IConfigurationRoot configuration, ILogger<HttpDataRetriever> logger)
+        public HttpDataRetriever(WebPageDownloaderSettings downloaderSettings)
         {
-            _httpClient = new HttpClient();
+            _httpClient = new HttpClient ();
 
-            _configuration = configuration;
-
-            _logger = logger;
-
-            CheckAllConfigParamsOnValid();
+            _downloaderSettings = downloaderSettings;
         }
 
         public void Dispose()
@@ -57,18 +38,15 @@ namespace LAB.DataScanner.Components.Services.Downloaders
 
         private async Task<object> RetrieveData(string url, bool isMethodReturnsString)
         {
-            if (!_isContinueWork) return null;
-
             try
             {
-                if (_htmlDataDownloadingMethod.Equals("static", StringComparison.OrdinalIgnoreCase))
+                if (_downloaderSettings.HtmlDataDownloadingMethod.Equals("static", StringComparison.OrdinalIgnoreCase))
                 {
                     HttpResponseMessage response = await _httpClient.GetAsync(url);
 
                     if (!response.EnsureSuccessStatusCode().StatusCode.Equals("OK"))
                     {
-                        _logger.LogError($"Some issues with http request have been occured (@Status code: {response.EnsureSuccessStatusCode().StatusCode})");
-                        return null;
+                        throw new HttpRequestException($"Some issues with http request have been occured (@Status code: {response.EnsureSuccessStatusCode().StatusCode})");
                     }
 
                     if (isMethodReturnsString)
@@ -80,15 +58,14 @@ namespace LAB.DataScanner.Components.Services.Downloaders
                         return RetrieveStaticByteArrayAsync(response);
                     }
                 }
-                else if (_htmlDataDownloadingMethod.Equals("dynamic", StringComparison.OrdinalIgnoreCase))
+                else if (_downloaderSettings.HtmlDataDownloadingMethod.Equals("dynamic", StringComparison.OrdinalIgnoreCase))
                 {
                     return await RetrieveDynamicDataAsync(url, isMethodReturnsString);
                 }
             }
-            catch (HttpRequestException e)
+            catch
             {
-                _logger.LogError(e.Message);
-                return null;
+                throw;
             }
 
             return null;
@@ -119,8 +96,7 @@ namespace LAB.DataScanner.Components.Services.Downloaders
 
                 driver.Navigate().GoToUrl(url);
 
-                //TODO: not used
-                var isPageDownloaded = wait.Until(driver => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
+                wait.Until(driver => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
    
                 object resultContent = null;
 
@@ -144,49 +120,6 @@ namespace LAB.DataScanner.Components.Services.Downloaders
         private async Task<byte[]> RetrieveStaticByteArrayAsync(HttpResponseMessage response)
         {
             return await Task.Run(() => response.Content.ReadAsByteArrayAsync());
-        }
-
-        //TODO: To valid config please use the common method
-        private void CheckAllConfigParamsOnValid() 
-        {
-            //TODO: Using the Bind method is clearer and takes up fewer lines.
-            var _downloadingSettingsArrsSection = _configuration.GetSection("HtmlDataDownloadingSettingsArrs");
-
-            var _applicationSection = _configuration.GetSection("Application");
-
-            //get all possible DownloadingMethods from config
-            _configDownloadingMethods = JsonConvert.DeserializeObject<string[]>
-                (_downloadingSettingsArrsSection.GetSection("HtmlDataDownloadingMethods").Value ?? "");
-
-            //get all possible WebBrowsers from config
-            _configWebBrowsers = JsonConvert.DeserializeObject<string[]>
-                (_downloadingSettingsArrsSection.GetSection("WebBrowsers").Value ?? "");
-
-            _htmlDataDownloadingMethod = _applicationSection.GetSection("HtmlDataDownloadingMethod").Value ?? "";
-
-            if (_htmlDataDownloadingMethod.Equals("") || !_configDownloadingMethods.Contains(_htmlDataDownloadingMethod))
-            {
-                _logger.LogError($"HtmlDataDownloadingMethod is not valid: " +
-                    $"{_htmlDataDownloadingMethod} " +
-                    $"({String.Join($", ", _configDownloadingMethods.Select(p => p.ToString()).ToArray())} " +
-                    $"was expected)");
-
-                //TODO: In case your configuration is critical for the application you must throw an exception
-                _isContinueWork = false;
-            }
-
-            _webBrowser = _applicationSection.GetSection("WebBrowser").Value ?? "";
-
-            if (_webBrowser.Equals("") || !_configWebBrowsers.Contains(_webBrowser))
-            {
-                _logger.LogError($"WebBrowser name is not valid: " +
-                    $"{String.Join($", ", _configWebBrowsers.Select(p => p.ToString()).ToArray())} " +
-                    $"was expected)");
-
-                _isContinueWork = false;
-            }
-
-            _isContinueWork = true;
         }
     }
 }

@@ -1,13 +1,13 @@
 ﻿using Microsoft.Extensions.Configuration;
 using System;
 using LAB.DataScanner.Components.Services.MessageBroker;
-using System.IO;
 using Microsoft.Extensions.DependencyInjection;
 using LAB.DataScanner.Components.Interfaces.Converters;
-using Serilog;
 using LAB.DataScanner.Components.Services.MessageBroker.Interfaces;
-using Microsoft.Extensions.Logging;
 using LAB.DataScanner.Components.Services.Converters;
+using LAB.DataScanner.Components.Settings;
+using LAB.DataScanner.Components.Services.Validators;
+using LAB.DataScanner.Components.Interfaces.Engines;
 
 namespace LAB.DataScanner.HtmlToJsonConverter
 {
@@ -15,43 +15,61 @@ namespace LAB.DataScanner.HtmlToJsonConverter
     {
         static void Main()
         {
+            #region Configuration, settings binding and validation
             var configuration = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
+                .SetBasePath(System.IO.Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json")
                 .Build();
 
-            var serviceProvider = BuildServiceProvider(new ServiceCollection(), configuration);
+            var converterSettings = new HtmlToJsonConverterSettings();
 
-            var htmlToJsonConverterEngine = serviceProvider.GetService<IConverterEngine<string, string>>();
+            configuration.GetSection("Application").Bind(converterSettings);
 
-            htmlToJsonConverterEngine.Start();
+            configuration.GetSection("ConnectionSettings").Bind(converterSettings);
+
+            configuration.GetSection("HtmlDataDownloadingSettingsArrs").Bind(converterSettings); 
+
+            configuration.GetSection("DBTableCreationSettings").Bind(converterSettings);
+
+            SettingsValidator.Validate(converterSettings);
+
+            var rmqPublisherSettings = new RmqPublisherSettings();
+
+            configuration.GetSection("PublisherSettings").Bind(rmqPublisherSettings);
+
+            SettingsValidator.Validate(rmqPublisherSettings);
+
+            var rqmConsumerSettings = new RmqConsumerSettings();
+
+            configuration.GetSection("ConsumerSettings").Bind(rqmConsumerSettings);
+
+            SettingsValidator.Validate(rqmConsumerSettings);
+            #endregion
+
+            var rqmPublisher = new RmqPublisherBuilder()
+                .UsingConfigExchangeAndRoutingKey(rmqPublisherSettings)
+                .UsingDefaultConnectionSetting()
+                .Build();
+
+            var rmqConsumer = new RmqConsumerBuilder(rqmConsumerSettings)
+                .UsingConfigQueueName(rqmConsumerSettings)
+                .UsingConfigConnectionSettings(converterSettings)
+                .Build();
+
+            var serviceProvider = new ServiceCollection()
+                .AddSingleton<IRmqPublisher>(rqmPublisher)
+                .AddSingleton<IRmqConsumer>(rmqConsumer)
+                .AddSingleton<HtmlToJsonConverterSettings>(converterSettings)
+                .AddSingleton<RmqPublisherSettings>(rmqPublisherSettings)
+                .AddSingleton<RmqConsumerSettings>(rqmConsumerSettings)
+                .AddSingleton<IEngine, HtmlToJsonConverterEngine>()
+                .BuildServiceProvider();
+
+            var htmlToJsonConverter = serviceProvider.GetService<IEngine>();
+
+            htmlToJsonConverter.Start();
 
             Console.ReadKey();
-        }
-
-        private static ServiceProvider BuildServiceProvider(IServiceCollection services, IConfigurationRoot configuration)
-        {
-            return services
-                .AddLogging(builder =>
-                {
-                    var logger = new LoggerConfiguration()
-                        .ReadFrom.Configuration(configuration)
-                        .CreateLogger();
-                    builder.AddSerilog(logger);
-                })
-                .AddSingleton<IConfigurationRoot>(c => configuration)
-                .AddSingleton<IRmqPublisher>(r => new RmqPublisherBuilder()
-                    .UsingConfigExchangeAndRoutingKey(configuration.GetSection("Binding"))
-                    .UsingDefaultConnectionSetting()
-                    .UsingLogger(services.BuildServiceProvider().GetRequiredService<ILogger<RmqPublisherBuilder>>())
-                    .Build())
-                .AddSingleton<IRmqConsumer>(c => new RmqConsumerBuilder(configuration)
-                    .UsingConfigQueueName(configuration.GetSection("Binding"))
-                    .UsingConfigConnectionSettings(configuration.GetSection("ConnectionSettings"))
-                    .UsingLogger(services.BuildServiceProvider().GetRequiredService<ILogger<RmqConsumerBuilder>>())
-                    .Build())
-                .AddSingleton<IConverterEngine<string, string>, HtmlToJsonConverterEngine>()
-                .BuildServiceProvider();
         }
     }
 }

@@ -1,0 +1,10 @@
+﻿{
+  "profiles": {
+    "LAB.DataScanner.WebPageDownloaderMicroService": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

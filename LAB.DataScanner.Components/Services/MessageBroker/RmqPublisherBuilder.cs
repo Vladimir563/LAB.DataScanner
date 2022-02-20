@@ -1,8 +1,6 @@
 ﻿using LAB.DataScanner.Components.Services.MessageBroker.Interfaces;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
+using LAB.DataScanner.Components.Settings;
 using RabbitMQ.Client;
-using RabbitMQ.Client.Exceptions;
 using System;
 
 namespace LAB.DataScanner.Components.Services.MessageBroker
@@ -13,17 +11,19 @@ namespace LAB.DataScanner.Components.Services.MessageBroker
 
         private IConnection _connection;
 
-        private ILogger<RmqBaseBuilder<IRmqPublisher>> _logger;
-
         private string _exchange;
 
         private string _routingKey = "#";
 
         private bool _isExchangeAutoCreation = false;
 
-        public RmqPublisherBuilder UsingExchange(string exchange) 
+        private string _exchangeType;
+
+        public RmqPublisherBuilder UsingExchange(string exchange, string exchangeType) 
         {
             _exchange = exchange;
+
+            _exchangeType = exchangeType;
 
             return this;
         }   
@@ -35,20 +35,24 @@ namespace LAB.DataScanner.Components.Services.MessageBroker
             return this;
         }
 
-        public RmqPublisherBuilder UsingExchangeAndRoutingKey(string exchange, string routingKey)
+        public RmqPublisherBuilder UsingExchangeAndRoutingKey(string exchange, string exchangeType, string routingKey)
         {
             _exchange = exchange;
 
             _routingKey = routingKey;
 
+            _exchangeType = exchangeType;
+
             return this;
         }
 
-        public RmqPublisherBuilder UsingConfigExchangeAndRoutingKey(IConfigurationSection configurationSection)
+        public RmqPublisherBuilder UsingConfigExchangeAndRoutingKey(RmqPublisherSettings rmqPublisherSettings)
         {
-            _exchange = configurationSection.GetSection("SenderExchange").Value;
+            _exchange = rmqPublisherSettings.SenderExchange;
 
-            _routingKey = configurationSection.GetSection("SenderRoutingKey").Value;
+            _routingKey = rmqPublisherSettings.BasicSenderRoutingKey;
+
+            _exchangeType = rmqPublisherSettings.ExchangeType;
 
             return this;
         }
@@ -62,8 +66,6 @@ namespace LAB.DataScanner.Components.Services.MessageBroker
 
         private void PreparePublisherConnection() 
         {
-            _logger.LogInformation("PreparePublisherConnection() method has been executed.");
-
             var connectionFactory = new ConnectionFactory
             {
                 UserName = this.UserName,
@@ -77,9 +79,9 @@ namespace LAB.DataScanner.Components.Services.MessageBroker
             {
                 _connection = connectionFactory.CreateConnection();
             }
-            catch (BrokerUnreachableException e)
+            catch
             {
-                _logger?.LogError($"RmqPublisherBuilder: Connection to rabbitmq server has been failed. [{e.Message}]");
+                throw;
             }
         }
 
@@ -94,16 +96,14 @@ namespace LAB.DataScanner.Components.Services.MessageBroker
                 _exchange = "exchange_" + Guid.NewGuid();
             }
 
-            _channel.ExchangeDeclare(_exchange, "topic");
+            if (_exchangeType is null || _exchangeType.Equals(string.Empty)) 
+            {
+                _exchangeType = "topic";
+            }
+
+            _channel.ExchangeDeclare(_exchange, _exchangeType);
 
             return new RmqPublisher(_channel, _exchange, _routingKey);
-        }
-
-        public override RmqBaseBuilder<IRmqPublisher> UsingLogger(ILogger<RmqBaseBuilder<IRmqPublisher>> logger)
-        {
-            _logger = logger;
-
-            return this;
         }
     }
 }

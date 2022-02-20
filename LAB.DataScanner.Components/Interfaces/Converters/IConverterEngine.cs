@@ -1,12 +1,9 @@
-﻿using RabbitMQ.Client.Events;
+﻿using LAB.DataScanner.Components.Interfaces.Engines;
 
 namespace LAB.DataScanner.Components.Interfaces.Converters
 {
-    //TODO: Why are there methods that are not used?
-    public interface IConverterEngine <T,P>
+    public interface IConverterEngine <T,P> : IEngine
     {
-        void Start();
         T Convert(P content);
-        void OnReceive(object model, BasicDeliverEventArgs ea);
     }
 }

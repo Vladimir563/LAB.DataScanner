@@ -1,12 +1,11 @@
-﻿using LAB.DataScanner.Components.Interfaces.Generators;
+﻿using LAB.DataScanner.Components.Interfaces.Engines;
 using LAB.DataScanner.Components.Services.Generators;
 using LAB.DataScanner.Components.Services.MessageBroker;
 using LAB.DataScanner.Components.Services.MessageBroker.Interfaces;
+using LAB.DataScanner.Components.Services.Validators;
+using LAB.DataScanner.Components.Settings;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Serilog;
-using System;
 
 namespace LAB.DataScanner.UrlsGenerator
 {
@@ -14,38 +13,43 @@ namespace LAB.DataScanner.UrlsGenerator
     {
         static void Main()
         {
+            #region Configuration, settings binding and validation
             var configuration = new ConfigurationBuilder()
-                        .SetBasePath(System.IO.Directory.GetCurrentDirectory())
-                        .AddJsonFile("appsettings.json")
-                        .Build();
+            .SetBasePath(System.IO.Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json")
+            .Build();
 
-            var serviceProvider = BuildServiceProvider(new ServiceCollection(), configuration);
+            UrlsGeneratorSettings generatorSettings = new UrlsGeneratorSettings();
 
-            var urlsGeneratorEngine = serviceProvider.GetService<IGeneratorEngine>();
+            configuration.GetSection("Application").Bind(generatorSettings);
 
-            urlsGeneratorEngine.Generate();
+            configuration.GetSection("ConnectionSettings").Bind(generatorSettings);
 
-            Console.ReadKey();
-        }
+            SettingsValidator.Validate(generatorSettings);
 
-        private static ServiceProvider BuildServiceProvider(IServiceCollection services, IConfigurationRoot configuration)
-        {
-            return services
-                .AddLogging(builder =>
-                {
-                    var logger = new LoggerConfiguration()
-                        .ReadFrom.Configuration(configuration)
-                        .CreateLogger();
-                    builder.AddSerilog(logger);
-                })
-                .AddSingleton<IConfigurationRoot>(c => configuration)
-                .AddSingleton<IRmqPublisher>(r => new RmqPublisherBuilder()
-                    .UsingConfigExchangeAndRoutingKey(configuration.GetSection("Binding"))
-                    .UsingDefaultConnectionSetting()
-                    .UsingLogger(services.BuildServiceProvider().GetRequiredService<ILogger<RmqPublisherBuilder>>())
-                    .Build())
-                .AddSingleton<IGeneratorEngine, UrlsGeneratorEngine>()
+            var rmqPublisherSettings = new RmqPublisherSettings();
+
+            configuration.GetSection("PublisherSettings").Bind(rmqPublisherSettings);
+
+            SettingsValidator.Validate(rmqPublisherSettings);
+
+            #endregion
+
+            var rmqPublisher = new RmqPublisherBuilder()
+                .UsingConfigExchangeAndRoutingKey(rmqPublisherSettings)
+                .UsingDefaultConnectionSetting()
+                .Build();
+
+            var serviceProvider = new ServiceCollection()
+                .AddSingleton<IRmqPublisher>(rmqPublisher)
+                .AddSingleton<UrlsGeneratorSettings>(generatorSettings)
+                .AddSingleton<RmqPublisherSettings>(rmqPublisherSettings)
+                .AddSingleton<IEngine, UrlsGeneratorEngine>()
                 .BuildServiceProvider();
+
+            var urlsGeneratorEngine = serviceProvider.GetService<IEngine>();
+
+            urlsGeneratorEngine.Start();
         }
     }
 }

@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
+﻿using LAB.DataScanner.Components.Settings.SettingsLibrary;
 
 namespace LAB.DataScanner.Components.Services.MessageBroker
 {
@@ -30,17 +29,17 @@ namespace LAB.DataScanner.Components.Services.MessageBroker
             return this; 
         }
 
-        public RmqBaseBuilder<T> UsingConfigConnectionSettings(IConfigurationSection configurationSection)
+        public RmqBaseBuilder<T> UsingConfigConnectionSettings(BaseSettings settings)
         {
-            UserName = configurationSection.GetSection("UserName").Value;
+            UserName = settings.UserName;
 
-            Password = configurationSection.GetSection("Password").Value;
+            Password = settings.Password;
 
-            HostName = configurationSection.GetSection("HostName").Value;
+            HostName = settings.HostName;
 
-            Port = int.Parse(configurationSection.GetSection("Port").Value);
+            Port = settings.Port;
 
-            VirtualHost = configurationSection.GetSection("VirtualHost").Value;
+            VirtualHost = settings.VirtualHost;
 
             return this;
         }
@@ -60,8 +59,6 @@ namespace LAB.DataScanner.Components.Services.MessageBroker
 
             return this;
         }
-
-        public abstract RmqBaseBuilder<T> UsingLogger(ILogger<RmqBaseBuilder<T>> logger);
 
         public abstract T Build();
     }

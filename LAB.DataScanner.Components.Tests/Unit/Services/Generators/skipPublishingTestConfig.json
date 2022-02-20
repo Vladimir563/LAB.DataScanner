@@ -1,0 +1,16 @@
+﻿{
+  "Application": {
+    "UrlTemplate": "http://testSite/{0}/{1}/{2}",
+    "Sequences": [
+      [ 0, 2 ],
+      [ 3, 6 ],
+      [ 4, 5 ]
+    ]
+  },
+  "PublisherSettings": {
+    "SenderExchange": "",
+    "BasicSenderRoutingKey": "#",
+    "SenderRoutingKeys": [ ],
+    "ExchangeType": "topic"
+  }
+}

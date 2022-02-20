@@ -1,9 +1,7 @@
 ﻿using HtmlAgilityPack;
 using LAB.DataScanner.Components.Interfaces.Converters;
 using LAB.DataScanner.Components.Services.MessageBroker.Interfaces;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
+using LAB.DataScanner.Components.Settings;
 using RabbitMQ.Client.Events;
 using System;
 using System.Collections.Generic;
@@ -14,89 +12,62 @@ namespace LAB.DataScanner.Components.Services.Converters
 {
     public class HtmlToJsonConverterEngine : IConverterEngine<string, string>
     {
-        private readonly IConfigurationRoot _htmlToJsonConverterEngineSettings;
+        private readonly RmqPublisherSettings _publisherSettings;
+
+        private readonly HtmlToJsonConverterSettings _converterSettings;
 
         private readonly IRmqPublisher _rmqPublisher;
 
         private readonly IRmqConsumer _rmqConsumer;
 
-        private readonly ILogger<HtmlToJsonConverterEngine> _logger;
-
-        private readonly string[] _routingKeys;
-
-        private readonly string _exchangeName;
-
-        private readonly string _commonPattern;
-
         private readonly string [] _columsNamesArr;
 
         private readonly string [] _patterns;
 
-        public HtmlToJsonConverterEngine(IConfigurationRoot htmlToJsonConverterEngineSettings, 
-            IRmqPublisher rmqPublisher, IRmqConsumer rmqConsumer, ILogger<HtmlToJsonConverterEngine> logger)
+        public HtmlToJsonConverterEngine(RmqPublisherSettings publisherSettings, 
+                                        HtmlToJsonConverterSettings converterSettings,
+                                        IRmqPublisher rmqPublisher, IRmqConsumer rmqConsumer)
         {
-            _htmlToJsonConverterEngineSettings = htmlToJsonConverterEngineSettings;
-
             _rmqPublisher = rmqPublisher;
 
             _rmqConsumer = rmqConsumer;
 
-            _logger = logger;
-           
-            //TODO: Using the Bind method is clearer and takes up fewer lines. Samplle link https://thecodeblogger.com/2021/04/20/multiple-ways-to-access-configurations-in-net-applications/
-            _routingKeys = JsonConvert.DeserializeObject<string[]>(_htmlToJsonConverterEngineSettings
-                .GetSection("Binding:SenderRoutingKeys").Value ?? "");
+            _publisherSettings = publisherSettings;
 
-            _exchangeName = _htmlToJsonConverterEngineSettings
-                .GetSection("Binding:SenderExchange").Value ?? "";
+            _converterSettings = converterSettings;
 
-            var colums = htmlToJsonConverterEngineSettings.GetSection("DBTableCreationSettings:colums").Value;
+            _columsNamesArr = _converterSettings.Colums.Select(p => p.Trim().Split(' ')).Select(p => p[0]).ToArray();
 
-            var columsArr = colums.Split(',');
-
-            _columsNamesArr = columsArr.Select(p => p.Trim().Split(' ')).Select(p => p[0]).ToArray();
-
-            _commonPattern = htmlToJsonConverterEngineSettings
-                .GetSection("Application:HtmlFragmentExpression").Value;
-
-            _patterns = _commonPattern.Split('&').ToArray();
+            _patterns = _converterSettings.HtmlFragmentExpression.Split('&').ToArray();
         }
 
         public void Start() 
         {
-            _logger.LogInformation("HtmlToJsonConverterEngine.Start() has been executed.");
-
             _rmqConsumer.StartListening(OnReceive);
         }
 
         public string Convert(string htmlContent)
         {
-            //TODO: not used
-            List<HtmlNodeCollection> extractedHtmlNodes = new List<HtmlNodeCollection>();
+            if (htmlContent is null) 
+            {
+                throw new ArgumentNullException("Failed to get an htmlContent");
+            }
+
+            List<HtmlNodeCollection> extractedHtmlNodes;
 
             var htmlDoc = new HtmlDocument();
 
-            var htmlFragmentStrategy = _htmlToJsonConverterEngineSettings.GetSection("Application:HtmlFragmentStrategy").Value ?? "";
-
-            var htmlFragmentExpression = _htmlToJsonConverterEngineSettings.GetSection("Application:HtmlFragmentExpression").Value ?? "";
+            var htmlFragmentStrategy = _converterSettings.HtmlFragmentStrategy;
 
             if (!htmlFragmentStrategy.Equals("SelectNodes", StringComparison.OrdinalIgnoreCase) &&
                 !htmlFragmentStrategy.Equals("SelectSingleNode", StringComparison.OrdinalIgnoreCase)) 
             {
-                _logger.LogInformation("HtmlFragmentStrategy is not valid or not set");
-                return "";
-            }
-
-            if (htmlFragmentExpression.Equals("", StringComparison.OrdinalIgnoreCase)) 
-            {
-                _logger.LogInformation("HtmlFragmentExpression is not set");
-                return "";
+                throw new ArgumentException("HtmlFragmentStrategy is not valid (possible values: \"SelectNodes\", \"SelectSingleNode\")");
             }
 
             //select parsing strategy pattern
             if (htmlFragmentStrategy.Equals("SelectNodes", StringComparison.OrdinalIgnoreCase))
             {
-                //TODO: What if the variable is null?
                 extractedHtmlNodes = GetExtractedHtmlNodeCollection(htmlDoc, htmlContent, false);
             }
             else
@@ -107,8 +78,7 @@ namespace LAB.DataScanner.Components.Services.Converters
             return HtmlToJsonParse(extractedHtmlNodes, _columsNamesArr);
         }
 
-        //TODO: What is the reason to have a public method?
-        public void OnReceive(object model, BasicDeliverEventArgs ea)
+        private void OnReceive(object model, BasicDeliverEventArgs ea)
         {
             var body = ea.Body.ToArray();
 
@@ -120,17 +90,16 @@ namespace LAB.DataScanner.Components.Services.Converters
 
             if (!(jsonContent is null))
             {
-                _rmqPublisher.Publish(jsonContent, _exchangeName, _routingKeys);
+                _rmqPublisher.Publish(jsonContent, _publisherSettings.SenderExchange, _publisherSettings.SenderRoutingKeys);
             }
             else 
             {
-                _logger.LogError("No html fragments matches");
+                throw new FormatException("No html fragments matches");
             }
         }
 
         public List<HtmlNodeCollection> GetExtractedHtmlNodeCollection(HtmlDocument htmlDoc, string htmlContent, bool isSingleNodeRequire)
         {
-            //TODO: the htmlContent variable can be null
             htmlDoc.LoadHtml(htmlContent);
 
             List<HtmlNodeCollection> nodeCollectionList = new List<HtmlNodeCollection>();
@@ -148,10 +117,10 @@ namespace LAB.DataScanner.Components.Services.Converters
                 foreach (var item in _patterns)
                 {
                     var htmlNodes = htmlDoc.DocumentNode.SelectNodes(item);
+
                     if (htmlNodes is null) 
                     {
-                        _logger.LogInformation("HtmlContent doesn't store any items");
-                        break;
+                        throw new FormatException("HtmlContent doesn't store any items");
                     }
                     nodeCollectionList.Add(htmlNodes);
                 }
@@ -178,8 +147,7 @@ namespace LAB.DataScanner.Components.Services.Converters
 
             var nodesHtmlStringPrep = $"{String.Join($"", nodesHtmlString.ToString().Select(ch => ch.Equals('\'') ? "\'\'" : ch.ToString()).ToArray())}";
 
-            return $"N'[\n{nodesHtmlStringPrep}]'";
+            return $"[\n{nodesHtmlStringPrep}]";
         }
-
     }
 }

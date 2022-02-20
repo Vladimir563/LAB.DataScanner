@@ -38,16 +38,16 @@ namespace LAB.DataScanner.Components.Tests.Unit.Services.MessageBroker
             //Arrange
             IRmqConsumer _rmqConsumerMock = Substitute.For<IRmqConsumer>();
 
-            WebPageDownloaderEngine _webPageDownloaderEngineMock = Substitute.For<WebPageDownloaderEngine>
-            (Substitute.For<IConfigurationRoot>(),
-            Substitute.For<IDataRetriever>(),
-            Substitute.For<IRmqPublisher>(),
-            _rmqConsumerMock,
-            Substitute.For<IUrlsValidator>(),
-            _logger);
+            //WebPageDownloaderEngine _webPageDownloaderEngineMock = Substitute.For<WebPageDownloaderEngine>
+            //(Substitute.For<IConfigurationRoot>(),
+            //Substitute.For<IDataRetriever>(),
+            //Substitute.For<IRmqPublisher>(),
+            //_rmqConsumerMock,
+            //Substitute.For<IUrlsValidator>(),
+            //_logger);
 
             //Act
-            _webPageDownloaderEngineMock.OnReceive(this, _args);
+            //_webPageDownloaderEngineMock.OnReceive(this, _args);
 
             //Assert
             _rmqConsumerMock.Received(1).Ack(_args);
@@ -62,16 +62,16 @@ namespace LAB.DataScanner.Components.Tests.Unit.Services.MessageBroker
             IRmqConsumer _rmqConsumerMock = Substitute.For<RmqConsumer>
                 (_amqpChannelMock, null);
 
-            WebPageDownloaderEngine _webPageDownloaderEngineMock = Substitute.For<WebPageDownloaderEngine>
-            (Substitute.For<IConfigurationRoot>(),
-            Substitute.For<IDataRetriever>(),
-            Substitute.For<IRmqPublisher>(),
-            _rmqConsumerMock,
-            Substitute.For<IUrlsValidator>(),
-            _logger);
+            //WebPageDownloaderEngine _webPageDownloaderEngineMock = Substitute.For<WebPageDownloaderEngine>
+            //(Substitute.For<IConfigurationRoot>(),
+            //Substitute.For<IDataRetriever>(),
+            //Substitute.For<IRmqPublisher>(),
+            //_rmqConsumerMock,
+            //Substitute.For<IUrlsValidator>(),
+            //_logger);
 
             //Act
-            _rmqConsumerMock.StartListening(_webPageDownloaderEngineMock.OnReceive);
+            //_rmqConsumerMock.StartListening(_webPageDownloaderEngineMock.OnReceive);
 
             //Assert
             _amqpChannelMock.Received(1).BasicConsume(null, false, _rmqConsumerMock.GetBasicConsumer());

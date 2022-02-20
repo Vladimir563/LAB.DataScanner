@@ -9,7 +9,7 @@ namespace LAB.DataScanner.Components.Services.MessageBroker
 
         private string _exchange;
 
-        private string _routingKey;
+        private string _routingKey { get; set; }
 
         public RmqPublisher(IModel amqpChannel, string exchange, string routingKey) 
         {
