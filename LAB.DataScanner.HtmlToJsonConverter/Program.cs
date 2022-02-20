@@ -27,8 +27,7 @@ namespace LAB.DataScanner.HtmlToJsonConverter
             }
             catch (Exception e)
             {
-                ServiceEventSource.Current.ServiceHostInitializationFailed(e.ToString());
-                throw;
+                GetLogger().Error(e.Message);
             }
         }
 
@@ -50,7 +49,6 @@ namespace LAB.DataScanner.HtmlToJsonConverter
 
         private static ServiceProvider GetServiceProvider(StatelessServiceContext context)
         {
-
             #region Configuration, settings binding and validation
 
             var configuration = new ConfigurationBuilder()

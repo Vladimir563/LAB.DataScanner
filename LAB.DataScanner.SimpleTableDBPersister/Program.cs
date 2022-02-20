@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Fabric;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,8 +28,7 @@ namespace LAB.DataScanner.SimpleTableDBPersister
             }
             catch (Exception e)
             {
-                ServiceEventSource.Current.ServiceHostInitializationFailed(e.ToString());
-                throw;
+                GetLogger().Error(e.Message);
             }
         }
 
@@ -52,7 +50,6 @@ namespace LAB.DataScanner.SimpleTableDBPersister
 
         private static ServiceProvider GetServiceProvider(StatelessServiceContext context)
         {
-
             #region Configuration, settings binding and validation
 
             var configuration = new ConfigurationBuilder()
