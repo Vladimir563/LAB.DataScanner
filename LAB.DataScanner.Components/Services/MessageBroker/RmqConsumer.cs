@@ -2,6 +2,7 @@
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System;
+using System.Diagnostics;
 
 namespace LAB.DataScanner.Components.Services.MessageBroker
 {
@@ -41,6 +42,7 @@ namespace LAB.DataScanner.Components.Services.MessageBroker
         {
             //TODO: where is a logger
             Console.WriteLine(" [*] Waiting for messages. To exit press CTRL+C");
+            Debug.Print(" [*] Waiting for messages. To exit press CTRL+C");
 
             _consumer.Received += onReceiveHandler;
 

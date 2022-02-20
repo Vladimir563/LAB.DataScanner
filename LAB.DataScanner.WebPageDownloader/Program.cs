@@ -1,4 +1,5 @@
-﻿using LAB.DataScanner.Components.Interfaces.Engines;
+using System.Fabric;
+using LAB.DataScanner.Components.Interfaces.Engines;
 using LAB.DataScanner.Components.Services.Downloaders;
 using LAB.DataScanner.Components.Services.MessageBroker;
 using LAB.DataScanner.Components.Services.MessageBroker.Interfaces;
@@ -6,18 +7,61 @@ using LAB.DataScanner.Components.Services.Validators;
 using LAB.DataScanner.Components.Settings;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using System;
+using Microsoft.ServiceFabric.Services.Runtime;
+using Serilog;
 
 namespace LAB.DataScanner.WebPageDownloader
 {
-    internal class Program
+    internal static class Program
     {
-        static void Main()
+        private static void Main()
         {
+            try
+            {
+                try
+                {
+                    ServiceRuntime.RegisterServiceAsync("LAB.DataScanner.WebPageDownloaderType", context => new WebPageDownloader
+                        (context, GetLogger(context), GetServiceProvider(context))).GetAwaiter().GetResult();
+
+                    Thread.Sleep(Timeout.Infinite);
+                }
+                catch (Exception e)
+                {
+                    throw;
+                }
+
+                Thread.Sleep(Timeout.Infinite);
+            }
+            catch (Exception e)
+            {
+                ServiceEventSource.Current.ServiceHostInitializationFailed(e.ToString());
+                throw;
+            }
+        }
+
+        private static Serilog.ILogger GetLogger(StatelessServiceContext context)
+        {
+            var logger = new LoggerConfiguration()
+                .WriteTo.Debug()
+                //.WriteTo.Elasticsearch(new ElasticsearchSinkOptions(new Uri("http://localhost:9200"))
+                //{
+                //    AutoRegisterTemplate = true,
+                //    AutoRegisterTemplateVersion = AutoRegisterTemplateVersion.ESv6,
+                //    IndexFormat = "urls_generator_service",
+                //    MinimumLogEventLevel = Serilog.Events.LogEventLevel.Verbose
+                //})
+                .CreateLogger();
+
+            return logger;
+        }
+
+        private static ServiceProvider GetServiceProvider(StatelessServiceContext context)
+        {
+
             #region Configuration, settings binding and validation
+
             var configuration = new ConfigurationBuilder()
-                .SetBasePath(System.IO.Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json")
+                .AddJsonFile(context)
                 .Build();
 
             var downloaderSettings = new WebPageDownloaderSettings();
@@ -53,7 +97,7 @@ namespace LAB.DataScanner.WebPageDownloader
                 .UsingConfigConnectionSettings(downloaderSettings)
                 .Build();
 
-            var serviceProvider = new ServiceCollection()
+            return new ServiceCollection()
                 .AddSingleton<IRmqPublisher>(rqmPublisher)
                 .AddSingleton<IRmqConsumer>(rmqConsumer)
                 .AddSingleton<RmqPublisherSettings>(rmqPublisherSettings)
@@ -62,12 +106,6 @@ namespace LAB.DataScanner.WebPageDownloader
                 .AddSingleton<IDataRetriever, HttpDataRetriever>()
                 .AddSingleton<IEngine, WebPageDownloaderEngine>()
                 .BuildServiceProvider();
-
-            var webPageDownloaderEngine = serviceProvider.GetService<IEngine>();
-
-            webPageDownloaderEngine.Start();
-
-            Console.ReadKey();
         }
     }
 }
