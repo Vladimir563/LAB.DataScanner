@@ -1,0 +1,2 @@
+Connect-ServiceFabricCluster
+Register-ServiceFabricApplicationType -ApplicationPathInImageStore DataScannerPkg

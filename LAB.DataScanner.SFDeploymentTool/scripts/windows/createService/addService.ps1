@@ -1,0 +1,2 @@
+Connect-ServiceFabricCluster
+New-ServiceFabricService -ApplicationName fabric:/DataScannerApplication -ServiceName fabric:/DataScannerApplication/LAB.DataScanner.HtmlToJsonConverter -ServiceTypeName LAB.DataScanner.HtmlToJsonConverterType -Stateless -PartitionSchemeSingleton -InstanceCount -1

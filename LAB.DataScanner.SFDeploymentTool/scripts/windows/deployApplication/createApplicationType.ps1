@@ -1,0 +1,2 @@
+Connect-ServiceFabricCluster
+New-ServiceFabricApplication fabric:/DataScannerApplication LAB.DataScanner.ServiceFabricType 1.0.0

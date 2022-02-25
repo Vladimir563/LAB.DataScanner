@@ -1,0 +1,2 @@
+Connect-ServiceFabricCluster
+Unregister-ServiceFabricApplicationType LAB.DataScanner.ServiceFabricType 1.0.0 -Force
