@@ -1,16 +1,18 @@
-using System.Fabric;
+using LAB.DataScanner.Components;
+using LAB.DataScanner.Components.Interfaces.Engines;
+using LAB.DataScanner.Components.Services.MessageBroker;
+using LAB.DataScanner.Components.Services.MessageBroker.Interfaces;
+using LAB.DataScanner.Components.Services.Validators;
+using LAB.DataScanner.Components.Settings;
+using LAB.DataScanner.HtmlToJsonConverter;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.ServiceFabric.Services.Runtime;
 using Serilog;
 using Serilog.Sinks.Elasticsearch;
-using LAB.DataScanner.Components;
-using LAB.DataScanner.Components.Services.MessageBroker;
-using LAB.DataScanner.Components.Settings;
-using LAB.DataScanner.Components.Services.Validators;
-using LAB.DataScanner.Components.Services.MessageBroker.Interfaces;
-using LAB.DataScanner.Components.Interfaces.Engines;
-using LAB.DataScanner.HtmlToJsonConverter;
+using System;
+using System.Fabric;
+using System.Threading;
 
 namespace LAB.DataScanner.SimpleTableDBPersister
 {

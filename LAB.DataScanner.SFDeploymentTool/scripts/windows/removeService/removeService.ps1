@@ -1,2 +1,0 @@
-Connect-ServiceFabricCluster
-Remove-ServiceFabricService -ServiceName fabric:/DataScannerApplication/LAB.DataScanner.HtmlToJsonConverter -Force

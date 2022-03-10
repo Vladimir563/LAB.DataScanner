@@ -1,10 +1,13 @@
-using System.Fabric;
 using LAB.DataScanner.Components.Interfaces.Engines;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.ServiceFabric.Services.Runtime;
 using Serilog;
 using Serilog.Core.Enrichers;
+using System;
+using System.Fabric;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace LAB.DataScanner.HtmlToJsonConverter
 {

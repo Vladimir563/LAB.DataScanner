@@ -1,4 +1,3 @@
-using System.Fabric;
 using LAB.DataScanner.Components;
 using LAB.DataScanner.Components.Interfaces.Engines;
 using LAB.DataScanner.Components.Services.Downloaders;
@@ -11,6 +10,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.ServiceFabric.Services.Runtime;
 using Serilog;
 using Serilog.Sinks.Elasticsearch;
+using System;
+using System.Fabric;
+using System.Threading;
 
 namespace LAB.DataScanner.WebPageDownloader
 {
